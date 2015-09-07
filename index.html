@@ -145,6 +145,74 @@
 							</p>
 						</aside>
 					</section>
+					<section>
+						<h1>Outline</h1>
+						<ul>
+							<li>
+								<a href="#/introduction">
+									Introduction
+								</a>
+							</li>
+						</ul>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="introduction">
+						<h1>Introduction</h1>
+						<ul>
+							<li>
+								<a href="#/introduction-why-an-intellij-plugin">
+									Why an IntelliJ Plugin?
+								</a>
+							</li>
+						</ul>
+					</section>
+					<section id="introduction-why-an-intellij-plugin">
+						<h1>Why an IntelliJ Plugin?</h1>
+						<ul>
+							<li>I use Rubymine for Ruby development</li>
+							<li>Wanted vim key bindings</li>
+							<li>Wanted Cmd+Click Go To Definition for Elixir</li>
+							<li>Wanted Search Everywhere for Elixir</li>
+							<li>There was a tutorial</li>
+						</ul>
+						<aside>
+							<p>
+								People may wonder why I took it upon myself to make an IDE plugin for Elixir, when I
+								could have used a vim or emacs plugin.
+							</p>
+							<p>
+								I've used both emacs and vim.  I started with emacs when I worked at Cray, only
+								switching to vim when I needed something that worked over a high-latency, low-bandwidth
+								CDMA modem on the high-way.
+							</p>
+							<p>
+								I started using Rubymine when my boss at a previous job, Nicholas Cancelliere,
+								introduced me to it.  I was shocked that an IDE for a dynamic language like Ruby could
+								support Find Usage, Go To Definition, and Refactor.  I had been use to using ctags for
+								vim.
+							</p>
+							<p>
+								I haven't complete abandoned using vim either.  I still use syntax highlighting plugins
+								for vim in iTerm when I need to edit configuration files and I use the IDEAVim plugin
+								for Jetbrains IDEs like Rubymine, Webstorm, and IntelliJ.
+							</p>
+							<p>
+								Without Rubymine I don't think I'd have been able to as quickly dive through the complex
+								code-base in Metasploit and the graphical debugger allowed me to teach myself the
+								internals of Rails and other DSLs.
+							</p>
+							<p>
+								I understood that many of the features I liked about Rubymine were shared across
+								JetBrains' various IDEs, so if I could write the parts of a plugin to get JetBrains APIs
+								to understand Elixir syntax and semantics, the features I really wanted would just work
+								without me having to understand how to write the parts that were cross-language.
+							</p>
+							<p>
+								However, just getting syntax right ended up taking a year...
+							</p>
+						</aside>
+					</section>
 				</section>
 			</div>
 
