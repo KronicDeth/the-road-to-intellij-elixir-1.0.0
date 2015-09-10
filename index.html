@@ -153,6 +153,11 @@
 									Introduction
 								</a>
 							</li>
+							<li>
+								<a href="#/syntax">
+									Syntax
+								</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -360,6 +365,78 @@
 								After only 6 days I had quote unquote translated the BNF from yecc to Grammar Kit and
 								ended up with a parser that froze the IDE, which Julius "h4cc" Beckmann reported. That left
 								the slow process of translating the grammar correctly over the next 359 days.
+							</p>
+						</aside>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="syntax">
+						<h1>Syntax</h1>
+						<ul>
+							<li>
+								<a href="#/syntax-analysis">Analysis</a>
+							</li>
+						</ul>
+					</section>
+					<section id="syntax-analysis">
+						<h1>Syntactic Analysis</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Step</th>
+								<th>Elixir</th>
+								<th>IntelliJ Elixir</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<th>Lexing</th>
+								<td>
+									Erlang
+								</td>
+								<td>
+									JFlex
+								</td>
+							</tr>
+							<tr>
+								<th>Parsing</th>
+								<td>
+									YECC
+								</td>
+								<td>
+									GrammarKit
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								In order to support color syntax highlighting and mark syntax errors with the nice
+								red squiggly under line, IntelliJ Elixir needed to be able to analyze Elixir syntax.
+							</p>
+							<p>
+								Syntactic analysis is usually broken down into two parts: the first breaks the raw text
+								into tokens and the second checks if those tokens are arranged in the correct order.
+							</p>
+							<p>
+								In most programming languages, both lexers and parsers are built using generators that
+								have an external DSL.  In Elixir, the lexer is built using Erlang directly because
+								Erlang pattern matching is compact enough that a generator is unnecessary.  Additional,
+								Elixir syntax contains some features that normal lexer generator aren't expecting.
+							</p>
+							<p>
+								For IntelliJ Elixir, I used JFlex because it was the lexer generator recommended by
+								JetBrain's plugin tutorial.
+							</p>
+							<p>
+								For parsing Elixir does use a generator, called yecc, which generates Erlang code.
+							</p>
+							<p>
+								For IntelliJ Elixir, I used JetBrains' GrammarKit.
+							</p>
+							<p>
+								When I first started IntelliJ Elixir I didn't understand the important difference
+								between these two stacks, but I hope to explain what I learned along the way to you.
 							</p>
 						</aside>
 					</section>
