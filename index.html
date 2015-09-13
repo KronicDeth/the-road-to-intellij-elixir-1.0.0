@@ -154,8 +154,8 @@
 								</a>
 							</li>
 							<li>
-								<a href="#/syntax">
-									Syntax
+								<a href="#/bnf">
+									BNF
 								</a>
 							</li>
 						</ul>
@@ -361,10 +361,170 @@
 							<p>
 								I was exactly 1 year between the initial commit of the project skeleton to the v1.0.0 tag.
 							</p>
+
+						</aside>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="bnf">
+						<h1>BNF</h1>
+						<ul>
+							<li>
+								<a href="#/bnf-backus-naur-form">Backus Naur Form</a>
+							</li>
+							<li>
+								<a href="#/bnf-yecc">YECC</a>
+							</li>
+							<li>
+								<a href="#/bnf-grammar-kit">Grammar Kit</a>
+							</li>
+							<li>
+								<a href="#/bnf-v0.0.1">v0.0.1</a>
+							</li>
+						</ul>
+					</section>
+					<section id="bnf-backus-naur-form">
+						<h1>Backus-Naur Form</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Read as</th>
+								<th>Symbol</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>Metasyntactic Variable</td>
+								<td>
+									<pre><code class="bnf">&lt;variable&gt;</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>is defined as</td>
+								<td>
+									<pre><code class="bnf">::=</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>or</td>
+								<td>
+									<pre><code class="bnf">|</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<pre><code data-trim>
+&lt;expr&gt; ::= &lt;integer&gt; | &lt;expr&gt; &lt;op&gt; &lt;integer&gt;
+						</code></pre>
+						<aside class="notes">
+							<p>
+								One of the standard ways of defining a syntax is in BNF, or Backus-Naur Form, which
+								was first used for the Algol 60 standard.
+							</p>
+							<p>
+								Both YECC and GrammarKit use a form of BNF, so I assumed it was just a matter of
+								porting elixir dot Y-R-L to elixir dot B-N-F.
+							</p>
+						</aside>
+					</section>
+					<section id="bnf-yecc">
+						<h1>YECC</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/12f89a30b46279398fc7143e433681c2194b03d9/lib/elixir/src/elixir_parser.yrl#L77-L82">
+									lib/elixir/src/elixir_parser.yrl
+								</a>
+							</figcaption>
+							<pre><code data-trim style="font-size: 300%; line-height: 100%">
+grammar -> eoe : nil.
+grammar -> expr_list : to_block('$1').
+grammar -> eoe expr_list : to_block('$2').
+grammar -> expr_list eoe : to_block('$1').
+grammar -> eoe expr_list eoe : to_block('$2').
+grammar -> '$empty' : nil.
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								YECC is a parser generator written in Erlang (and part of the standard distribution)
+								that is based on yacc (with an 'a' instead of an 'e'), which is a parser generator
+								written in C.
+							</p>
+							<p>
+								The YECC syntax differs from B-N-F in that it uses a skinny arrow (<code>-></code>)
+								instead of colon colon equals (<code>::=</code>) and instead of using pipe
+								(<code>|</code>) for OR, lines with the same rule name are repeated with alternative
+								definitions. Finally, YECC supports running Erlang code on the tokens using dollar
+								number (<code>$n</code>) for positional references to the matches tokens.
+							</p>
+							<p>
+								dollar empty (<code>$empty</code>) is a special token that matches no input.  In
+								formal grammars this is usually referred to as (lowercase) epsilon (<code>ɛ</code>).
+							</p>
+						</aside>
+					</section>
+					<section id="bnf-grammar-kit">
+						<h1>Grammar Kit</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v1.0.0/src/org/elixir_lang/Elixir.bnf">
+									src/org/elixir_lang/Elixir.bnf
+								</a>
+							</figcaption>
+							<pre><code data-trim style="font-size: 165%; line-height: 100%">
+private elixirFile ::= endOfExpression? (expressionList endOfExpression?)?
+private expressionList ::= expression (endOfExpression expression | adjacentExpression)*
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								Grammar Kit is a parser generator written in Java and created by JetBrains.
+							</p>
+							<p>
+								GrammarKit's B-N-F format <strong>does</strong> use colon colon equals (<code>::=</code>)
+								like Backus-Naur Form, but it has some more power constructs above pipe (<code>|</code>)
+								for OR.
+							</p>
+							<p>
+								Question mark (<code>?</code>) can be used for 0 or 1, parentheses (<code>()</code>)
+								can be used for grouping; and star can be used for 0 or more.  Empty can be implied
+								by question mark (<code>?</code>) or star (<code>*</code>) matching nothing or there
+								being nothing on the right-hand-side of the colon colon equals (<code>::=</code>).
+							</p>
+							<p>
+								You'll also notice that there is no inline Java code after the rule definition unlike
+								in YECC where there as Erlang code.  This is because GrammarKit automatically generates
+								an AST, which it calls a PSI (or Program Structure Interface) Tree from the matched
+								rules, so there's no need to define how to build the tree.
+							</p>
+							<p>
+								Having GrammarKit generate the AST is both good and bad.  It's good because it removes
+								a lot of redundant code, but it's bad because rules must evaluate in the correct order
+								to reflect the desired nesting and associativity without any manual fixups, which are
+								possible with the Erlang code in YECC.
+							</p>
+						</aside>
+					</section>
+					<section id="bnf-v0.0.1">
+						<h1>v0.0.1</h1>
+						<ol>
+							<li>Translate from YECC to Grammar Kit</li>
+							<li>Freeze IDE</li>
+						</ol>
+						<aside class="notes">
+							<p>
+								YECC and Grammar Kit both support a form of BNF and Grammar Kit seems like it would
+								support even a more compact grammar because question mark (<code>?</code>), star
+								(<code>star</code>), pipe (<code>|</code>) and parentheses (<code>()</code>) could
+								eliminate some of the redundancy needed in the multi-clause rules in YECC.
+							</p>
 							<p>
 								After only 6 days I had quote unquote translated the BNF from yecc to Grammar Kit and
-								ended up with a parser that froze the IDE, which Julius "h4cc" Beckmann reported. That left
-								the slow process of translating the grammar correctly over the next 359 days.
+								ended up with a parser that froze the IDE, which Julius "h4cc" Beckmann reported. That
+								left the slow process of translating the grammar correctly over the next 359 days.  At
+								the time of the freeze, I didn't even really understand translating the BNF didn't work,
+								all I knew was I needed to go slower and build the grammar up from simpler, testable
+								pieces.
 							</p>
 						</aside>
 					</section>
@@ -374,7 +534,16 @@
 						<h1>Syntax</h1>
 						<ul>
 							<li>
-								<a href="#/syntax-analysis">Analysis</a>
+								<a href="#/syntax-analysis">Syntactic Analysis</a>
+							</li>
+							<li>
+								<a href="#/syntax-lexing">Lexing/Tokenizing</a>
+							</li>
+							<li>
+								<a href="#/syntax-lexer">Lexer</a>
+							</li>
+							<li>
+								<a href="#/syntax-jflex-lexer-generation">JFlex Lexer Generation</a>
 							</li>
 						</ul>
 					</section>
@@ -411,6 +580,11 @@
 						</table>
 						<aside class="notes">
 							<p>
+								So, I went back and actually started to do the JetBrains tutorial step by step instead
+								of jumping ahead and searched Wikipedia, trying to find CompSci articles that explained
+								the correct way to do this.
+							</p>
+							<p>
 								In order to support color syntax highlighting and mark syntax errors with the nice
 								red squiggly under line, IntelliJ Elixir needed to be able to analyze Elixir syntax.
 							</p>
@@ -421,8 +595,9 @@
 							<p>
 								In most programming languages, both lexers and parsers are built using generators that
 								have an external DSL.  In Elixir, the lexer is built using Erlang directly because
-								Erlang pattern matching is compact enough that a generator is unnecessary.  Additional,
-								Elixir syntax contains some features that normal lexer generator aren't expecting.
+								Erlang pattern matching is compact enough that a generator is unnecessary.
+								Additionally, Elixir syntax contains some features that normal lexer generator aren't
+								expecting.
 							</p>
 							<p>
 								For IntelliJ Elixir, I used JFlex because it was the lexer generator recommended by
@@ -440,6 +615,96 @@
 							</p>
 						</aside>
 					</section>
+					<section id="syntax-lexing">
+						<h1>Lexing/Tokenizing</h1>
+						<ol>
+							<li>Match Input</li>
+							<li>Emit Token</li>
+						</ol>
+						<aside class="notes">
+							<p>
+								The first step of syntactic analysis is lexing, also known as tokenizing.  Lexing
+								breaks up the raw text into tokens, such as keywords, literals, operators, and
+								identifiers.
+							</p>
+							<p>
+								Input is matched using some pattern.  In native Elixir, this is pattern matching on
+								Erlang string prefixes.  In IntelliJ Elixir's JFlex file, it's regular expressions.
+							</p>
+						</aside>
+					</section>
+					<section id="syntax-lexer">
+						<h1>Lexers</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Token</th>
+								<th>Erlang</th>
+								<th>JFlex</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>Base Integers</td>
+								<td>
+									<a href="https://github.com/elixir-lang/elixir/blob/12f89a30b46279398fc7143e433681c2194b03d9/lib/elixir/src/elixir_tokenizer.erl#L135-L145">
+										<pre><code class="erlang" data-trim>
+tokenize([$0, $x, H|T], Line, Column, Scope, Tokens) when ?is_hex(H) ->
+  {Rest, Number, Length} = tokenize_hex([H|T], []),
+  tokenize(Rest, Line, Column + 2 + Length, Scope, [{number, {Line, Column, Column + 2 + Length}, Number}|Tokens]);
+
+tokenize([$0, $b, H|T], Line, Column, Scope, Tokens) when ?is_bin(H) ->
+  {Rest, Number, Length} = tokenize_bin([H|T], []),
+  tokenize(Rest, Line, Column + 2 + Length, Scope, [{number, {Line, Column, Column + 2 + Length}, Number}|Tokens]);
+
+tokenize([$0, $o, H|T], Line, Column, Scope, Tokens) when ?is_octal(H) ->
+  {Rest, Number, Length} = tokenize_octal([H|T], []),
+  tokenize(Rest, Line, Column + 2 + Length, Scope, [{number, {Line, Column, Column + 2 + Length}, Number}|Tokens]);
+									    </code></pre>
+									</a>
+								</td>
+								<td>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+					</section>
+					<section id="syntax-jflex-lexer-generation">
+						<h1>JFlex Lexer Generation</h1>
+						<ol>
+							<li>Regular Expressions</li>
+							<li>
+								<figure>
+									<figcaption>Nondeterministic Finite Automaton</figcaption>
+									<pre><code>Constructing NFA : 2,324 states in NFA</code></pre>
+										Converting NFA to DFA :
+										..........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+										714 states before minimization, 424 states in minimized DFA</code></pre>
+								</figure>
+							</li>
+							<li>
+								<figure>
+									<figcaption>Deterministic Finite Automaton</figcaption>
+									<pre><code>Converting NFA to DFA</code></pre>
+								</figure>
+							</li>
+							<li>
+								<figure>
+									<figcaption>Minimized Deterministic Finite Automaton</figcaption>
+									<pre><code>714 states before minimization, 424 states in minimized DFA</code></pre>
+								</figure>
+							</li>
+						</ol>
+					</section>
+				</section>
+				<section id="bibliography">
+					<ul>
+						<li>
+							<a href="https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form">
+								Backus-Naur Form
+							</a>
+						</li>
+					</ul>
 				</section>
 			</div>
 
