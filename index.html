@@ -160,6 +160,9 @@
                             <li>
                                 <a href="#/interpolation">Interpolation</a>
                             </li>
+                            <li>
+                                <a href="#/sigils">Sigils</a>
+                            </li>
 						</ul>
 					</section>
 				</section>
@@ -1459,6 +1462,460 @@ close = Stream.repeatedly(fn -> ~S|} "| end) |>
                                 In 5 days I was able to figure out how to convert the JFlex finite automaton
                                 to a pushdown automaton by following the formal definition that pushdown automaton
                                 just is a finite automaton with a stack that it can consult for transition logic.
+                            </p>
+                        </aside>
+                    </section>
+                </section>
+                <section class="stack">
+                    <section id="sigil">
+                        <h1>Sigil</h1>
+                        <ul>
+                            <li>
+                                <a href="#/sigil-elixir-native">Elixir Native</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-highlighting-dimensions">Highlighting Dimensions</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-tilde">Tilde</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-name">Name</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-promoter">Promoter</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-terminator">Terminator</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-modifiers">Modifiers</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-parser">Parser</a>
+                            </li>
+                            <li>
+                                <a href="#/sigil-v0.1.0">v0.1.0</a>
+                            </li>
+                        </ul>
+                    </section>
+                    <section id="sigil-elixir-native">
+                        <h1>Native Elixir</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L141-L158">
+                                    <code>lib/elixir/src/elixir_tokenizer.erl</code>
+                                </a>
+                                <pre><code class="erlang stretch" data-trim style="font-size: 125%; line-height: 100%">
+tokenize([$~,S,H,H,H|T] = Original, Line, Scope, Tokens) when ?is_quote(H), ?is_upcase(S) orelse ?is_downcase(S) ->
+  case extract_heredoc_with_interpolation(Line, Scope, ?is_downcase(S), T, H) of
+    {ok, NewLine, Parts, Rest} ->
+      {Final, Modifiers} = collect_modifiers(Rest, []),
+      tokenize(Final, NewLine, Scope, [{sigil, Line, S, Parts, Modifiers}|Tokens]);
+    {error, Reason} ->
+      {error, Reason, Original, Tokens}
+  end;
+
+tokenize([$~,S,H|T] = Original, Line, Scope, Tokens) when ?is_sigil(H), ?is_upcase(S) orelse ?is_downcase(S) ->
+  case elixir_interpolation:extract(Line, Scope, ?is_downcase(S), T, sigil_terminator(H)) of
+    {NewLine, Parts, Rest} ->
+      {Final, Modifiers} = collect_modifiers(Rest, []),
+      tokenize(Final, NewLine, Scope, [{sigil, Line, S, Parts, Modifiers}|Tokens]);
+    {error, Reason} ->
+      Sigil = [$~,S,H],
+      interpolation_error(Reason, Original, Tokens, " (for sigil ~ts starting at line ~B)", [Sigil, Line])
+  end;
+                                </code></pre>
+                            </figcaption>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                Native Elixir only cares whether the sigil is a heredoc (in the top clause) or a line
+                                (in the bottom clause).
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-highlighting-dimensions">
+                        <h1>Highlighting Dimensions</h1>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Dimension</th>
+                                <th>Values</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>Name</td>
+                                <td>
+                                    <ul>
+                                        <li>CharListSigil</li>
+                                        <li>Regex</li>
+                                        <li>Sigil</li>
+                                        <li>StringSigil</li>
+                                        <li>Words</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Interpolation</td>
+                                <td>
+                                    <ul>
+                                        <li>Interpolated</li>
+                                        <li>Literal</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Lines</td>
+                                <td>
+                                    <ul>
+                                        <li>Heredoc</li>
+                                        <li>Lined</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <aside class="notes">
+                            <p>
+                                For an IDE, it's not enough to detect that the syntax is correct for the sigils, ideally
+                                we'd want each sigil to highlight in a different color and the highlighting needs to
+                                be different for each literal vs interpolated so that users can spot if an escape
+                                escape or interpolation is used in a non-interpolating literal.
+                            </p>
+                            <p>
+                                These considerations mean I needed the tokenizer to produce different tokens for each
+                                combination of sigil name and interpolated vs literal.  There is a 3rd dimension of
+                                whether the sigil is a line or herdoc, which is important since leading spaces
+                                are significant and can't be treated as simple, ignored, whitespace in heredocs.
+                            </p>
+                            <p>
+                                The Sigil name is used for any generic sigil that may be in a user library that uses a
+                                character for a name not used by the Kernel.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-tilde">
+                        <h1>Tilde</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.flex#L296-L297">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 395%; line-height: 100%">
+&lt;BODY, INTERPOLATION&gt; {
+  {TILDE} { pushAndBegin(SIGIL);
+            return ElixirTypes.TILDE; }
+}
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The flex rule starts the same as tokenize's pattern match with tilde (<code>~</code>),
+                                but since JFlex only allow tokens that use the entire text of the match, I need to match
+                                the leading tilde and then jump to another state so I can match the sigil name as a
+                                separate token.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-name">
+                        <h1>Name</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.flex#L397-L401">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 350%; line-height: 100%">
+SIGIL_NAME = [A-Za-z]
+
+&lt;SIGIL&gt; {
+  {SIGIL_NAME} { nameSigil(yytext());
+                 yybegin(NAMED_SIGIL);
+                 return sigilNameType(); }
+}
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The sigil state only accepts single alphabetical characters and then jumps to the next
+                                state so that the single name can be a separate token.
+                            </p>
+                            <p>
+                                nameSigil adds the character to the stack state and then sigilNameType pulls the token
+                                type for that character back out.  This helps unify the API for the pre-defined sigil
+                                names and the catchall for user defined sigils.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-promoter">
+                        <h1>Promoter</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.flex#L183-L395">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                                <pre><code class="stretch" data-trim style="font-size: 190%; line-height: 100%">
+SIGIL_BRACES_PROMOTER = "{"
+SIGIL_BRACKETS_PROMOTER = "["
+SIGIL_CHEVRONS_PROMOTER = "<"
+SIGIL_DOUBLE_QUOTES_PROMOTER = "\""
+SIGIL_FORWARD_SLASH_PROMOTER = "/"
+SIGIL_PARENTHESES_PROMOTER = "("
+SIGIL_PIPE_PROMOTER = "|"
+SIGIL_SINGLE_QUOTES_PROMOTER = "'"
+
+SIGIL_PROMOTER = {SIGIL_BRACES_PROMOTER} |
+                 {SIGIL_BRACKETS_PROMOTER} |
+                 {SIGIL_CHEVRONS_PROMOTER} |
+                 {SIGIL_DOUBLE_QUOTES_PROMOTER} |
+                 {SIGIL_FORWARD_SLASH_PROMOTER} |
+                 {SIGIL_PARENTHESES_PROMOTER} |
+                 {SIGIL_PIPE_PROMOTER} |
+                 {SIGIL_SINGLE_QUOTES_PROMOTER}
+
+&lt;NAMED_SIGIL&gt; {
+  {SIGIL_HEREDOC_PROMOTER} { setPromoter(yytext());
+                             yybegin(GROUP_HEREDOC_START);
+                             return promoterType(); }
+  {SIGIL_PROMOTER}         { setPromoter(yytext());
+                             yybegin(GROUP);
+                             return promoterType(); }
+}
+                                </code></pre>
+                            </figcaption>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                Unlike Strings, which only use double quotes or Char List that only use single quotes,
+                                any sigil name can use any promoter, which is why the NAME_SIGIL state differs from
+                                the normal quote and start quote rule.
+                            </p>
+                            <p>
+                                If anyone has better terminology for this let me know.  I picked promoter because
+                                terminator was used in the native implementation and the oppose of a terminator in a DNA
+                                sequence is a promoter.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-terminator">
+                        <h1>Terminator</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.flex#L326-L355">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                                <pre><code class="stretch" data-trim style="font-size: 165%; line-height: 100%">
+&lt;GROUP&gt; {
+  {GROUP_TERMINATOR} {
+                       if (isTerminator(yytext())) {
+                         org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                         yybegin(stackFrame.getLastLexicalState());
+                         return stackFrame.terminatorType();
+                       } else {
+                         return fragmentType();
+                       }
+                     }
+  {EOL}|.            { return fragmentType(); }
+
+}
+
+&lt;GROUP_HEREDOC_END&gt; {
+  {GROUP_HEREDOC_TERMINATOR} {
+                               if (isTerminator(yytext())) {
+                                 if (isSigil()) {
+                                   yybegin(SIGIL_MODIFIERS);
+                                   return terminatorType();
+                                 } else {
+                                   org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                                   yybegin(stackFrame.getLastLexicalState());
+                                   return stackFrame.terminatorType();
+                                 }
+                               } else {
+                                 handleInState(GROUP_HEREDOC_LINE_BODY);
+                               }
+                             }
+}
+                                </code></pre>
+                            </figcaption>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The regular expression to end a group or heredoc unfortunately has to contain all
+                                <em>potential</em> terminators, not just the correct one that matches the active
+                                promoter because the regular expression can't be dynamic based on the stack since
+                                I added the stack to JFlex.
+                            </p>
+                            <p>
+                                So, when a potential terminator is matched, is terminator (<code>isTerminator</code>)
+                                checks that the text matches the promoter on the stack.  If it does match, then
+                                the group or heredoc ends, but if it doesn't match then the potential terminator is
+                                just treated as non-special text for the sigil, string, or char list.
+                            </p>
+                            <p>
+                                When the terminator matches the promoter, there also needs to be check if this is a
+                                sigil because unlike Char Lists or Strings, sigils can have characters after the
+                                terminator to modify the sigil behavior
+                            </p>
+                        </aside>
+                    </section>
+
+                    <section id="sigil-modifiers">
+                        <h1>Modifiers</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.flex#L39-L407">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 200%; line-height: 100%">
+%{
+  private void handleInState(int nextLexicalState) {
+    yypushback(yylength());
+    yybegin(nextLexicalState);
+  }
+}
+
+SIGIL_MODIFIER = [a-z]
+
+&lt;SIGIL_MODIFIERS&gt; {
+  {SIGIL_MODIFIER} { return ElixirTypes.SIGIL_MODIFIER; }
+  {EOL}|.          { org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                     handleInState(stackFrame.getLastLexicalState()); }
+}
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The sigil modifiers (<code>SIGIL_MODIFIERS</code>) state uses an idiom that would
+                                become common in elixir dot flex (<code>Elixir.flex</code>): the last rule in a
+                                state matches either E-O-L or any character so that it can be handled in another
+                                state.  Using this idiom, I was able to avoid duplicating rules in descendant state
+                                and instead just poping the stack and going back to <code>BODY</code> or
+                                <code>INTERPOLATION</code>.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-parser">
+                        <h1>Parser</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/71c39c30850b54574f0762cc80af3355bc9ef8c9/src/org/elixir_lang/Elixir.bnf#L24-L102">
+                                    <code>src/org/elixir_lang/Elixir.bnf</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 90%; line-height: 100%">
+private interpolatedCharListSigil ::= TILDE INTERPOLATING_CHAR_LIST_SIGIL_NAME CHAR_LIST_SIGIL_PROMOTER interpolatedCharListBody CHAR_LIST_SIGIL_TERMINATOR
+private interpolatedCharListBody ::= (interpolation | CHAR_LIST_FRAGMENT | VALID_ESCAPE_SEQUENCE)*
+private interpolatedHeredocCharListSigil ::= TILDE INTERPOLATING_CHAR_LIST_SIGIL_NAME CHAR_LIST_SIGIL_HEREDOC_PROMOTER EOL
+                                             interpolatedCharListBody
+                                             CHAR_LIST_SIGIL_HEREDOC_TERMINATOR
+private interpolatedHeredocRegex ::= TILDE INTERPOLATING_REGEX_SIGIL_NAME REGEX_HEREDOC_PROMOTER EOL
+                                     interpolatedRegexBody
+                                     REGEX_HEREDOC_TERMINATOR SIGIL_MODIFIER*
+private interpolatedHeredocSigil ::= TILDE INTERPOLATING_SIGIL_NAME SIGIL_HEREDOC_PROMOTER EOL
+                                     interpolatedSigilBody
+                                     SIGIL_HEREDOC_PROMOTER SIGIL_MODIFIER*
+private interpolatedHeredocStringSigil ::= TILDE INTERPOLATING_STRING_SIGIL_NAME STRING_SIGIL_HEREDOC_PROMOTER EOL
+                                           interpolatedStringBody
+                                           STRING_SIGIL_HEREDOC_TERMINATOR
+private interpolatedHeredocWords ::= TILDE INTERPOLATING_WORDS_SIGIL_NAME WORDS_HEREDOC_PROMOTER EOL
+                                     interpolatedWordsBody
+                                     WORDS_HEREDOC_TERMINATOR SIGIL_MODIFIER*
+private interpolatedRegex ::= TILDE INTERPOLATING_REGEX_SIGIL_NAME REGEX_PROMOTER interpolatedRegexBody REGEX_TERMINATOR SIGIL_MODIFIER*
+private interpolatedRegexBody ::= (interpolation | REGEX_FRAGMENT | VALID_ESCAPE_SEQUENCE)*
+private interpolatedSigil ::= TILDE INTERPOLATING_SIGIL_NAME SIGIL_PROMOTER interpolatedSigilBody SIGIL_TERMINATOR SIGIL_MODIFIER*
+private interpolatedSigilBody ::= (interpolation | SIGIL_FRAGMENT | VALID_ESCAPE_SEQUENCE)*
+private interpolatedStringSigil ::= TILDE INTERPOLATING_STRING_SIGIL_NAME STRING_SIGIL_PROMOTER interpolatedStringBody STRING_SIGIL_TERMINATOR
+private interpolatedStringBody ::=  (interpolation | STRING_FRAGMENT | VALID_ESCAPE_SEQUENCE)*
+private interpolatedWordsBody ::= (interpolation | WORDS_FRAGMENT | VALID_ESCAPE_SEQUENCE)*
+private literalCharListBody ::= CHAR_LIST_FRAGMENT*
+private literalCharListSigil ::= TILDE LITERAL_CHAR_LIST_SIGIL_NAME CHAR_LIST_SIGIL_PROMOTER literalCharListBody CHAR_LIST_SIGIL_TERMINATOR
+private literalHeredocRegex ::= TILDE LITERAL_REGEX_SIGIL_NAME REGEX_HEREDOC_PROMOTER EOL
+                                literalRegexBody
+                                REGEX_HEREDOC_TERMINATOR SIGIL_MODIFIER*
+private literalHeredocSigil ::= TILDE LITERAL_SIGIL_NAME SIGIL_HEREDOC_PROMOTER EOL
+                                literalSigilBody
+                                SIGIL_HEREDOC_TERMINATOR SIGIL_MODIFIER*
+private literalHeredocStringSigil ::= TILDE LITERAL_STRING_SIGIL_NAME STRING_SIGIL_HEREDOC_PROMOTER EOL
+                                      literalStringBody
+                                      STRING_SIGIL_HEREDOC_TERMINATOR
+private literalHeredocWords ::= TILDE LITERAL_WORDS_SIGIL_NAME WORDS_HEREDOC_PROMOTER EOL
+                                literalWordsBody
+                                WORDS_HEREDOC_TERMINATOR SIGIL_MODIFIER*
+private literalRegex ::= TILDE LITERAL_SIGIL_NAME REGEX_PROMOTER literalRegexBody REGEX_TERMINATOR SIGIL_MODIFIER*
+private literalRegexBody ::= REGEX_FRAGMENT*
+private literalSigil ::= TILDE LITERAL_SIGIL_NAME SIGIL_PROMOTER literalSigilBody SIGIL_TERMINATOR SIGIL_MODIFIER*
+private literalSigilBody ::= SIGIL_FRAGMENT*
+private literalStringBody ::= STRING_FRAGMENT*
+private literalStringSigil ::= TILDE LITERAL_STRING_SIGIL_NAME STRING_SIGIL_PROMOTER literalStringBody STRING_SIGIL_TERMINATOR
+private literalWords ::=  TILDE LITERAL_SIGIL_NAME WORDS_PROMOTER literal WORDS_TERMINATOR SIGIL_MODIFIER*
+private literalWordsBody ::= WORDS_FRAGMENT*
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                I was able to eliminate redundant code in the lexer by moving it to Java, but I couldn't
+                                figure out how to do the same for the BNF for the parser, so there had to be separate
+                                rule for each of the 20 combinations.
+                            </p>
+                            <p>
+                                Keep all the rule pattern for heredocs and lines in sync would prove difficult and lead
+                                to a few missed-update bugs.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="sigil-v0.1.0">
+                        <h1>v0.1.0</h1>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Delta Days</th>
+                                <th>Total Days</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>2014&#8209;09&#8209;13</td>
+								<td>36</td>
+								<td>48</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <ul>
+                            <li>
+                                <p>Enhancements</p>
+                                <ul>
+                                    <li>
+                                        Literal and interpolated sigils with highlighting
+                                        <ul>
+                                            <li>Char List Sigils (<code>~c</code> and <code>~C</code>) highlighted as 'Char List' in Settings.</li>
+                                            <li>
+                                                Regex Sigils (<code>~r</code> and <code>~R</code>) highlighted as 'Sigil' in Settings.
+                                                <strong>NOTE: RegExp syntax is not internally highlighted yet</strong>
+                                            </li>
+                                            <li>String Sigils (<code>~s</code> and <code>~S</code> highlighted as 'String' in Settings.</li>
+                                            <li>Word Sigils (<code>~w</code> and <code>~W</code> highlighted as 'Sigil' in Settings.</li>
+                                            <li>Custom Sigils highlighted as 'Sigil' in Settings.</li>
+                                            <li>Modifiers are highlighted on Regex, Word, and Custom while modifiers aren't allowed on CharList and String Sigils.</li>
+                                        </ul>
+                                </ul>
+                                <p>Bug Fixes</p>
+                                <ul>
+                                    <li>Single-quoted strings are correctly referred to as 'Character List' now instead of 'String' in Settings.</li>
+                                    <li>Double-quoted strings are correctly referred to as 'String' now instead of 'Interpolated String' in Settings.</li>
+                                    <li>Non-Heredoc CharLists and Strings can be multiline.</li>
+                                    <li>CharLists and Strings support interpolation and escape sequences.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <aside class="notes">
+                            <p>
+                                v0.1.0 also included some bug fixes where my Ruby brain had leaked into what was allowed
+                                in single and double quotes in Elixir.
                             </p>
                         </aside>
                     </section>
