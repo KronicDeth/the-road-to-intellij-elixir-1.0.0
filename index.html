@@ -2014,25 +2014,47 @@ private literalWordsBody ::= WORDS_FRAGMENT*
                     <section id="atoms">
                         <h1>Atoms</h1>
                         <ul>
-                            <li>
-                                <a href="#/atoms-elixir-native-literal">
-                                    Elixir Native - Literal
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#/atoms-elixir-native-quoted">
-                                    Elixir Native - Quoted
-                                </a>
-                            </li>
-                            <li>
+							<li>
+								<p>Elixir Native</p>
+								<ul>
+									<li>
+										<a href="#/atoms-elixir-native-literal">Literal</a>
+									</li>
+									<li>
+										<a href="#/atoms-elixir-native-fragments">Fragments</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/atoms-colon">Colon</a>
+							</li>
+							<li>
+								<a href="#/atoms-start">Start</a>
+							</li>
+							<li>
+								<p>Elixir Native</p>
+								<ul>
+									<li>
+										<a href="#/atoms-elixir-native-quoted">Quoted</a>
+									</li>
+									<li>
+										<a href="#/atoms-elixir-native-operators">Operators</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/atoms-parser">Parser</a>
+							</li>
+							<li>
                                 <a href="#/atoms-v0.1.2">
                                     v0.1.2
                                 </a>
                             </li>
                         </ul>
                     </section>
-                    <section>
-                        <h1>Elixir Native - Literal</h1>
+                    <section id="atoms-elixir-native-literal">
+                        <h1>Elixir Native</h1>
+						<h2>Literal</h2>
                         <figure>
                             <figcaption>
                                 <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L254-L771">
@@ -2068,8 +2090,9 @@ tokenize_atom(Rest, Acc) ->
                             </p>
                         </aside>
                     </section>
-                    <section id="atoms-elixir-native-parts">
-                        <h1>Elixir Native - Parts</h1>
+                    <section id="atoms-elixir-native-fragments">
+                        <h1>Elixir Native</h1>
+						<h2>Fragments</h2>
                         <figure>
                             <figcaption>
                                 <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/include/elixir.hrl#L50-L58">
@@ -2098,7 +2121,7 @@ tokenize_atom(Rest, Acc) ->
                             </p>
                         </aside>
                     </section>
-                    <section>
+                    <section id="atoms-colon">
                         <h1>Colon</h1>
                         <figure>
                             <figcaption>
@@ -2124,7 +2147,7 @@ COLON = :
                             </p>
                         </aside>
                     </section>
-                    <section>
+                    <section id="atoms-start">
                         <h1>Atom Start</h1>
                         <figure>
                             <figcaption>
@@ -2162,7 +2185,8 @@ ATOM_START = [a-zA-Z_]
                         </aside>
                     </section>
                     <section id="atoms-elixir-native-quoted">
-                        <h1>Elixir Native - Quoted</h1>
+                        <h1>Elixir Native</h1>
+						<h2>Quoted</h2>
                         <figure>
                             <figcaption>
                                 <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L241-L252">
@@ -2192,8 +2216,9 @@ tokenize([$:,H|T] = Original, Line, Scope, Tokens) when ?is_quote(H) ->
                             </p>
                         </aside>
                     </section>
-                    <section>
-                        <h1>Elixir Native - Operators</h1>
+                    <section id="atoms-elixir-native-operators">
+                        <h1>Elixir Native</h1>
+						<h2>Operators</h2>
                         <figure>
                             <figcaption>
                                 <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L265-L304">
@@ -2239,7 +2264,7 @@ tokenize([$:,T|Rest], Line, Scope, Tokens) when
                             </p>
                         </aside>
                     </section>
-                    <section>
+                    <section id="atoms-parser">
                         <h1>Parser</h1>
                         <figure>
                             <figcaption>
