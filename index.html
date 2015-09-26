@@ -163,6 +163,12 @@
                             <li>
                                 <a href="#/sigils">Sigils</a>
                             </li>
+                            <li>
+                                <a href="#/atoms">Atoms</a>
+                            </li>
+							<li>
+								<a href="#/matched-expressions">Matched Expressions</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -1920,6 +1926,1260 @@ private literalWordsBody ::= WORDS_FRAGMENT*
                         </aside>
                     </section>
                 </section>
+                <section class="stack">
+                    <section id="atoms">
+                        <h1>Atoms</h1>
+                        <ul>
+                            <li>
+                                <a href="#/atoms-elixir-native-literal">
+                                    Elixir Native - Literal
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/atoms-elixir-native-quoted">
+                                    Elixir Native - Quoted
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/atoms-v0.1.2">
+                                    v0.1.2
+                                </a>
+                            </li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h1>Elixir Native - Literal</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L254-L771">
+                                    <code>lib/elixir/src/elixir_tokenizer.erl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="erlang stretch" data-trim style="font-size: 180%; line-height: 100%">
+tokenize([$:,T|String] = Original, Line, Scope, Tokens) when ?is_atom_start(T) ->
+  {Rest, Part} = tokenize_atom([T|String], []),
+  case unsafe_to_atom(Part, Line, Scope) of
+    {ok, Atom} ->
+      tokenize(Rest, Line, Scope, [{atom, Line, Atom}|Tokens]);
+    {error, Reason} ->
+      {error, Reason, Original, Tokens}
+  end;
+
+tokenize_atom([H|T], Acc) when ?is_atom(H) ->
+  tokenize_atom(T, [H|Acc]);
+
+tokenize_atom([H|T], Acc) when H == $?; H == $! ->
+  {T, lists:reverse([H|Acc])};
+
+tokenize_atom(Rest, Acc) ->
+  {Rest, lists:reverse(Acc)}.
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                A literal atom is built up as a list of characters that start with colon <code>:</code>.
+                            </p>
+                            <p>
+                                The guards hint that that atom format is not uniform.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="atoms-elixir-native-parts">
+                        <h1>Elixir Native - Parts</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/include/elixir.hrl#L50-L58">
+                                    <code>lib/elixir/include/elixir.hrl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="erlang stretch" data-trim style="font-size: 145%; line-height: 100%">
+-define(is_digit(S), S >= $0 andalso S =< $9).
+-define(is_upcase(S), S >= $A andalso S =< $Z).
+-define(is_downcase(S), S >= $a andalso S =< $z).
+
+%% Atoms
+-define(is_atom_start(S), ?is_quote(S) orelse ?is_upcase(S) orelse ?is_downcase(S) orelse (S == $_)).
+-define(is_atom(S), ?is_identifier(S) orelse (S == $@)).
+
+-define(is_identifier(S), ?is_digit(S) orelse ?is_upcase(S) orelse ?is_downcase(S) orelse (S == $_)).
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                As you can see, atoms need to start with quotes, an underscore or a letter, but
+                                the body of can also includes digits and at (<code>@</code>), which is important
+                                for node names.  Finally, an atom can optionally end with an exclamation point
+                                (<code>!</code>) or question mark (<code>?</code>) to support functions with that name
+                                format.
+                            </p>
+                        </aside>
+                    </section>
+                    <section>
+                        <h1>Colon</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/2ce264275c4b307ef21f6e7efa764d69751e1a9a/src/org/elixir_lang/Elixir.flex#L177-L394">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                            </figcaption>
+                            <pre><code data-trim>
+COLON = :
+
+&lt;BODY, INTERPOLATION&gt; {
+  {COLON} { pushAndBegin(ATOM_START);
+            return ElixirTypes.COLON; }
+}
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                For <code>tokenize</code>, the colon (<code>:</code>) prefixing the atom value is thrown
+                                away, but in an IDE, characters must be tokenized since they are editable and take up
+                                space, so after tokenizing the colon, elixir dot flex (<code>Elixir.flex</code>) needs
+                                to jump to a new state, atom start (<code>ATOM_START</code>)
+                            </p>
+                        </aside>
+                    </section>
+                    <section>
+                        <h1>Atom Start</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/2ce264275c4b307ef21f6e7efa764d69751e1a9a/src/org/elixir_lang/Elixir.flex#L113-L375">
+                                    <code>src/org/elixir_lang/Elixir.flex</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 120%; line-height: 100%">
+ATOM_START = [a-zA-Z_]
+
+&lt;ATOM_START&gt; {
+  {ATOM_START}     { yybegin(ATOM_BODY);
+                     return ElixirTypes.ATOM_FRAGMENT; }
+  {QUOTE_PROMOTER} { /* At the end of the quote, return the state (BODY or INTERPOLATION) before ATOM_START as anything
+                        after the closing quote should be handle by the state prior to ATOM_START.  Without this,
+                        EOL and WHITESPACE won't be handled correctly */
+                     org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                     yybegin(stackFrame.getLastLexicalState());
+                     startQuote(yytext());
+                     return promoterType(); }
+  {OPERATOR}       { org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                     yybegin(stackFrame.getLastLexicalState());
+                     return ElixirTypes.ATOM_FRAGMENT; }
+  {EOL}            { return TokenType.BAD_CHARACTER; }
+}
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The atom start state (<code>ATOM_START</code>) has rules for literal atoms starting
+                                with atom start rule (<code>ATOM_START</code>), quote promoter
+                                (<code>QUOTE_PROMOTER</code>) for quoted atoms and <code>OPERATOR</code> for operators
+                                as atoms, since they don't follow the normal naming rules for atoms.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="atoms-elixir-native-quoted">
+                        <h1>Elixir Native - Quoted</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L241-L252">
+                                    <code>lib/elixir/src/elixir_tokenizer.erl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="erlang stretch" data-trim style="font-size: 150%; line-height: 100%">
+tokenize([$:,H|T] = Original, Line, Scope, Tokens) when ?is_quote(H) ->
+  case elixir_interpolation:extract(Line, Scope, true, T, H) of
+    {NewLine, Parts, Rest} ->
+      Unescaped = unescape_tokens(Parts),
+      Key = case Scope#elixir_tokenizer.existing_atoms_only of
+        true  -> atom_safe;
+        false -> atom_unsafe
+      end,
+      tokenize(Rest, NewLine, Scope, [{Key, Line, Unescaped}|Tokens]);
+    {error, Reason} ->
+      interpolation_error(Reason, Original, Tokens, " (for atom starting at line ~B)", [Line])
+  end;
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                Similar to how the quote promoter rule jumps to the normal quoting state, tokenize
+                                calls elixir interpolation colon extract (<code>elixir_interpolation:extract</code>) to
+                                handle the normal quote parsing and then treats it as an atom.
+                            </p>
+                        </aside>
+                    </section>
+                    <section>
+                        <h1>Elixir Native - Operators</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L265-L304">
+                                    <code>lib/elixir/src/elixir_tokenizer.erl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="erlang stretch" data-trim style="font-size: 155%; line-height: 100%">
+tokenize(":..." ++ Rest, Line, Scope, Tokens) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, '...'}|Tokens]);
+tokenize(":<<>>" ++ Rest, Line, Scope, Tokens) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, '<<>>'}|Tokens]);
+tokenize(":%{}" ++ Rest, Line, Scope, Tokens) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, '%{}'}|Tokens]);
+tokenize(":%" ++ Rest, Line, Scope, Tokens) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, '%'}|Tokens]);
+tokenize(":{}" ++ Rest, Line, Scope, Tokens) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, '{}'}|Tokens]);
+
+% ## Three Token Operators
+tokenize([$:,T1,T2,T3|Rest], Line, Scope, Tokens) when
+    ?unary_op3(T1, T2, T3); ?comp_op3(T1, T2, T3); ?and_op3(T1, T2, T3); ?or_op3(T1, T2, T3);
+    ?arrow_op3(T1, T2, T3); ?hat_op3(T1, T2, T3) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, list_to_atom([T1,T2,T3])}|Tokens]);
+
+% ## Two Token Operators
+tokenize([$:,T1,T2|Rest], Line, Scope, Tokens) when
+    ?comp_op2(T1, T2); ?rel_op2(T1, T2); ?and_op(T1, T2); ?or_op(T1, T2);
+    ?arrow_op(T1, T2); ?in_match_op(T1, T2); ?two_op(T1, T2); ?stab_op(T1, T2);
+    ?type_op(T1, T2) ->
+  tokenize(Rest, Line, Scope, [{atom, Line, list_to_atom([T1,T2])}|Tokens]);
+
+% ## Single Token Operators
+tokenize([$:,T|Rest], Line, Scope, Tokens) when
+    ?at_op(T); ?unary_op(T); ?capture_op(T); ?dual_op(T); ?mult_op(T);
+    ?rel_op(T); ?match_op(T); ?pipe_op(T); T == $. ->
+  tokenize(Rest, Line, Scope, [{atom, Line, list_to_atom([T])}|Tokens]);
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                elixir tokenizer (<code>elixir_tokenizer</code>) is more verbose because it can at best
+                                combine patterns of the same
+                            </p>
+                        </aside>
+                    </section>
+                    <section>
+                        <h1>Parser</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L26-L30">
+                                    <code>lib/elixir/src/elixir_parser.yrl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code data-trim style="font-size: 185%; line-height: 100%">
+Terminals
+  number signed_number atom atom_safe atom_unsafe bin_string list_string sigil
+                            </code></pre>
+                        </figure>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/KronicDeth/intellij-elixir/blob/2ce264275c4b307ef21f6e7efa764d69751e1a9a/src/org/elixir_lang/Elixir.bnf#L24">
+                                    <code>src/org/elixir_lang/Elixir.bnf</code>
+                                </a>
+                            </figcaption>
+                            <pre><code data-trim style="font-size: 185%; line-height: 100%">
+atom ::= COLON (ATOM_FRAGMENT | quote)
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                In the YECC grammar, atoms can be treated as terminals, meaning they are a single token
+                                from the tokenizer because the interpolation for quoted atoms is wrapped in the
+                                tokenize for atom.
+                            </p>
+                            <p>
+                                For the Grammar Kit BNF, atoms have to be a composite because the JFlex lexer doesn't
+                                backtrack, so any quoted atom just shows up as a quote with a COLON in front.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="atoms-v0.1.2">
+                        <h1>v0.1.2</h1>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Delta Days</th>
+                                <th>Total Days</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>2014&#8209;09&#8209;13</td>
+								<td>5</td>
+								<td>60</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <ul>
+                            <li>
+                                <p>Enhancements</p>
+                                <ul>
+                                    <li>
+                                        <p>Atoms with highlighting</p>
+                                        <ul>
+                                            <li>
+                                                Atom with double or single quotes to allow interpolation.  Double quotes are highlighted as 'String'
+                                                while single quotes are highlighted as 'Char List'.  This may be changed in the future.
+                                            </li>
+                                            <li>Literal atoms highlighted as 'Atom'.</li>
+                                            <li>Operator atoms highlighted as 'Atom'.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </section>
+                </section>
+                <section class="stack">
+                    <section id="matched-expressions">
+                        <h1>Matched Expressions</h1>
+                        <ul>
+                            <li>
+                                <a href="#/matched-expressions-call-syntaxes">Call Syntaxes</a>
+                            </li>
+                            <li>
+                                <a href="#/matched-expressions-yecc-associativity-and-precedence">YECC Associativity and Precedence</a>
+                            </li>
+                            <li>
+                                <a href="#/matched-expressions-grammar-kit-precedence">Grammar Kit Precedence</a>
+                            </li>
+                            <li>
+								<a href="#/matched-expressions-grammar-kit-associativity">Grammar Kit Associativity</a>
+                            </li>
+							<li>
+								<a href="#/matched-expressions-grammars">Grammars</a>
+							</li>
+							<li>
+								<a href="#/matched-expressions-parsing-direction">Parsing Direction</a>
+							</li>
+							<li>
+								<a href="#/matched-expressions-yecc-vs-grammar-kit-generated-code">YECC vs Grammar Kit Generated Code</a>
+							</li>
+							<li>
+								<p>Pratt Parsing</p>
+								<ul>
+									<li>
+										<a href="#/matched-expressions-pratt-parsing-head">Head</a>
+									</li>
+									<li>
+										<a href="#/matched-expressions-pratt-parsing-tail">Tail</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/matched-expressions-associativity">Associativity</a>
+							</li>
+							<li>
+								<a href="#/matched-expressions-v0.2.0">v0.2.0</a>
+							</li>
+                        </ul>
+                    </section>
+                    <section id="matched-expressions-call-syntaxes">
+                        <h1>Call Syntaxes</h1>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>
+                                    <code>elixir_parser.yrl</code>
+                                </th>
+                                <th>
+                                    <code>Elixir.bnf</code>
+                                </th>
+                                <th>Description</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L113-L122">
+                                        <code>matched_expr</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="https://github.com/KronicDeth/intellij-elixir/blob/0f8e974c4ec965c2f06653c8bddce7ddd3e80335/src/org/elixir_lang/Elixir.bnf#L191-L211">
+                                        <code>matchedExpression</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    With Parentheses*
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L124-L125">
+                                        <code>no_parens_expr</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="https://github.com/KronicDeth/intellij-elixir/blob/v1.0.0/src/org/elixir_lang/Elixir.bnf#L248-L259">
+                                        <code>unqualifiedNoParenthesesManyArgumentsCall</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    Without Parentheses
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L127-L133">
+                                        <code>unmatched_expr</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="https://github.com/KronicDeth/intellij-elixir/blob/v1.0.0/src/org/elixir_lang/Elixir.bnf#L2335-L2370">
+                                        <code>unmatchedExpression</code>
+                                    </a>
+                                </td>
+                                <td>
+                                    With Do Block
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <aside class="notes">
+                            <p>
+                                Elixir parser dot yurl (<code>elixir_parser.yrl</code>) explains that there are 3 call
+                                syntaxes in Elixir: matched, no parentheses, and unmatched.
+                            </p>
+                            <p>
+                                Matched also implies parentheses, except for one argument no parentheses calls because
+                                they can be chained together, which looks a lot like Haskell.
+                            </p>
+                        </aside>
+                    </section>
+                    <section id="matched-expressions-yecc-associativity-and-precedence">
+                        <h1>YECC associativity and precedence</h1>
+                        <figure>
+                            <figcaption>
+                                <a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L44-L71">
+                                    <code>lib/elixir/src/elixir_parser.yrl</code>
+                                </a>
+                            </figcaption>
+                            <pre><code class="stretch" data-trim style="font-size: 175%; line-height: 100%">
+%% Changes in ops and precedence should be reflected on lib/elixir/lib/macro.ex
+%% Note though the operator => in practice has lower precedence than all others,
+%% its entry in the table is only to support the %{user | foo => bar} syntax.
+Left       5 do.
+Right     10 stab_op_eol.     %% ->
+Left      20 ','.
+Nonassoc  30 capture_op_eol.  %% &
+Left      40 in_match_op_eol. %% <-, \\ (allowed in matches along =)
+Right     50 when_op_eol.     %% when
+Right     60 type_op_eol.     %% ::
+Right     70 pipe_op_eol.     %% |
+Right     80 assoc_op_eol.    %% =>
+Right     90 match_op_eol.    %% =
+Left     130 or_op_eol.       %% ||, |||, or, xor
+Left     140 and_op_eol.      %% &&, &&&, and
+Left     150 comp_op_eol.     %% ==, !=, =~, ===, !==
+Left     160 rel_op_eol.      %% <, >, <=, >=
+Left     170 arrow_op_eol.    %% < (op), (op) > (e.g |>, <<<, >>>)
+Left     180 in_op_eol.       %% in
+Right    200 two_op_eol.      %% ++, --, .., <>
+Left     210 add_op_eol.      %% + (op), - (op)
+Left     220 mult_op_eol.     %% * (op), / (op)
+Left     250 hat_op_eol.      %% ^ (op) (e.g ^^^)
+Nonassoc 300 unary_op_eol.    %% +, -, !, ^, not, ~~~
+Left     310 dot_call_op.
+Left     310 dot_op.          %% .
+Nonassoc 320 at_op_eol.       %% @
+Nonassoc 330 dot_identifier.
+                            </code></pre>
+                        </figure>
+                        <aside class="notes">
+                            <p>
+                                The YECC format has a section for declaring both the associativity and precedence of
+                                operators.  The operator table doesn't completely reflect the precedence of all operator
+                                combinations because there are some precedence swaps, such as for `not in`.
+                            </p>
+							<p>
+								<code>Nonassoc</code> is used for non-binary, prefix operators that don't have
+								associativity rules.
+							</p>
+							<p>
+								Higher precedence operators (with greater numbers) in the table can act as arguments
+								to the lower precedence operators, so and operators like double ampersand
+								(<code>&&</code>) take comparison operation using comparison operators like double
+								equals (<code>==</code>) at arguments.
+							</p>
+                        </aside>
+                    </section>
+                    <section id="matched-expressions-grammar-kit-precedence">
+						<h1>Grammar Kit Precedence</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/src/org/elixir_lang/Elixir.bnf#L191-L211">
+									<code>src/org/elixir_lang/Elixir.bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 230%; line-height: 100%">
+matchedExpression ::= matchedExpressionCaptureOperation |
+                      matchedExpressionInMatchOperation |
+                      matchedExpressionWhenOperation |
+                      matchedExpressionTypeOperation |
+                      matchedExpressionPipeOperation |
+                      matchedExpressionMatchOperation |
+                      matchedExpressionOrOperation |
+                      matchedExpressionAndOperation |
+                      matchedExpressionComparisonOperation |
+                      matchedExpressionRelationalOperation |
+                      matchedExpressionArrowOperation |
+                      matchedExpressionInOperation |
+                      matchedExpressionTwoOperation |
+                      matchedExpressionAdditionOperation |
+                      matchedExpressionMultiplicationOperation |
+                      matchedExpressionHatOperation |
+                      matchedExpressionUnaryOperation |
+                      matchedExpressionDotOperation |
+                      matchedExpressionAtOperation |
+                      identifierExpression |
+                      accessExpression
+							</code></pre>
+						</figure>
+                        <aside class="notes">
+                            <p>
+                                There isn't a unified associativity and precedence table for Grammar Kit's BNF.
+                                Instead, the precedence is order of choice in parent expression, which is also the
+								argument expression.
+                            </p>
+							<p>
+								Instead of stating the precedence of the operators as is done in YECC, the precedence
+								of operations using those operator is done in Grammar Kit.
+							</p>
+                        </aside>
+                    </section>
+					<section id="matched-expressions-grammar-kit-associativity">
+						<h1>Grammar Kit Associativity</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/src/org/elixir_lang/Elixir.bnf#L214-L232">
+									<code>src/org/elixir/Elixir.bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 115%; line-height: 100%">
+matchedExpressionAdditionOperation ::= matchedExpression DUAL_OPERATOR EOL* matchedExpression
+matchedExpressionAndOperation ::= matchedExpression EOL* AND_OPERATOR EOL* matchedExpression
+matchedExpressionArrowOperation ::= matchedExpression EOL* ARROW_OPERATOR EOL* matchedExpression
+matchedExpressionAtOperation ::= AT_OPERATOR EOL* matchedExpression
+matchedExpressionCaptureOperation ::= CAPTURE_OPERATOR EOL* matchedExpression
+matchedExpressionComparisonOperation ::= matchedExpression EOL* COMPARISON_OPERATOR EOL* matchedExpression
+matchedExpressionDotOperation ::= matchedExpression EOL* DOT_OPERATOR EOL* matchedExpression
+matchedExpressionHatOperation ::= matchedExpression EOL* HAT_OPERATOR EOL* matchedExpression
+matchedExpressionInMatchOperation ::= matchedExpression EOL* IN_MATCH_OPERATOR EOL* matchedExpression
+matchedExpressionInOperation ::= matchedExpression EOL* IN_OPERATOR EOL* matchedExpression
+matchedExpressionMatchOperation ::= matchedExpression EOL* MATCH_OPERATOR EOL* matchedExpression { rightAssociative = true }
+matchedExpressionMultiplicationOperation ::= matchedExpression EOL* MULTIPLICATION_OPERATOR EOL* matchedExpression
+matchedExpressionOrOperation ::= matchedExpression EOL* OR_OPERATOR EOL* matchedExpression
+matchedExpressionPipeOperation ::= matchedExpression EOL* PIPE_OPERATOR EOL* matchedExpression { rightAssociative = true }
+matchedExpressionRelationalOperation ::= matchedExpression EOL* RELATIONAL_OPERATOR EOL* matchedExpression
+matchedExpressionTwoOperation ::= matchedExpression EOL* TWO_OPERATOR EOL* matchedExpression { rightAssociative = true }
+matchedExpressionTypeOperation ::= matchedExpression EOL* TYPE_OPERATOR EOL* matchedExpression { rightAssociative = true }
+matchedExpressionUnaryOperation ::= (DUAL_OPERATOR | UNARY_OPERATOR) EOL* matchedExpression
+matchedExpressionWhenOperation ::= matchedExpression EOL* WHEN_OPERATOR EOL* matchedExpression { rightAssociative = true }
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								So, the pattern for binary operations are matched expression
+								(<code>matchedExpression</code>) on either side of the actual operator token with
+								optional newlines around the operator.
+							</p>
+							<p>
+								Left associativity is assumed by default, so right associativity is indicated with
+								right associative equals true (<code>rightAssociative = true</code>) in the braces after
+								the rule.
+							</p>
+							<p>
+								You may have noticed that these rules appear to be recursive: on the previous slide,
+								matched expression (<code>matchedExpression</code>) was defined as the ordered choice
+								of all the operations on this on this slide, but all the operations use matched
+								expression (<code>matchedExpression</code>) as both the left and right argument, so
+								why doesn't parser go into an infinite loop on the first binary rule, matched
+								expression in match operation (<code>matchedExpressionInMatchOperation</code>)?
+							</p>
+							<p>
+								There is no loop because Grammar Kit has some extensions that allow it to detect this
+								pattern of rules.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-grammars">
+						<h1>Grammars</h1>
+						<table>
+							<thead>
+							<tr>
+								<th></th>
+								<th>Look-ahead, Left-to-Right, Rightmost deriviation (LALR)</th>
+								<th>Parsing Expression Grammar</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<th>Inventor</th>
+								<td>Frank DeRemer</td>
+								<td>Bryan Ford</td>
+							</tr>
+							<tr>
+								<th>Invented</th>
+								<td>1969</td>
+								<td>2004</td>
+							</tr>
+							<tr>
+								<th>Terminal symbols</th>
+								<td>&#10003;</td>
+								<td>&#10003;</td>
+							</tr>
+							<tr>
+								<th>Nonterminal rules</th>
+								<td>&#10003;</td>
+								<td>&#10003;</td>
+							</tr>
+							<tr>
+								<th>Empty string</th>
+								<td>&#10003;</td>
+								<td>&#10003;</td>
+							</tr>
+							<tr>
+								<th>Sequence</th>
+								<td>&#10003;</td>
+								<td>&#10003;</td>
+							</tr>
+							<tr>
+								<th>Choice</th>
+								<td>Ambiguous</td>
+								<td>Ordered</td>
+							</tr>
+							<tr>
+								<th>Zero-or-more</th>
+								<td>
+									<span style="color: red">&#10060;</span>
+								</td>
+								<td>
+									<code>*</code>
+								</td>
+							</tr>
+							<tr>
+								<th>One-or-more</th>
+								<td>
+									<span style="color: red">&#10060;</span>
+								</td>
+								<td>
+									<code>+</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Optional</th>
+								<td>
+									<span style="color: red">&#10060;</span>
+								</td>
+								<td>
+									<code>?</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Positive Look-ahead</th>
+								<td>
+									<span style="color: red">&#10060;</span>
+								</td>
+								<td>
+									<code>&</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Negative Look-ahead</th>
+								<td>
+									<span style="color: red">&#10060;</span>
+								</td>
+								<td>
+									<code>!</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Derivation</th>
+								<td>Rightmost</td>
+								<td>Leftmost</td>
+							</tr>
+							<tr>
+								<th>Left-Recursion</th>
+								<td>Favored</td>
+								<td>Infinite Loop</td>
+							</tr>
+							<tr>
+								<th>Right-Recursion</th>
+								<td>Unfavored</td>
+								<td>Favored</td>
+							</tr>
+							<tr>
+								<th>Direction</th>
+								<td>Bottom-up</td>
+								<td>Top-down</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								YECC is a LALR, or look-ahead, left-to-right, rightmost derivation parser generator.
+								Grammar Kit is a Parsing Expression Grammar parser generator.
+							</p>
+							<p>
+								LALR parsers were invented back in 1969, but Parsing Expression Grammar weren't invented
+								until 2004, so they may have come out after some of us were in college.
+							</p>
+							<p>
+								LALR grammars don't have syntax for zero-or-more, one-or-more, or optional, instead they
+								have to be constructed with recursive rules or rule clauses involving empty strings,
+								so the grammar has to be more verbose.
+							</p>
+							<p>
+								LALR has look-ahead in its name, but the grammar itself has no control of how far to
+								look-ahead.  Instead, it's hard-coded to be one token.  In parsing expression grammars
+								any rule can be put after ampersand (<code>&</code>) to do a positive look-ahead or
+								after exclamation point (<code>!</code>) to do negative look-ahead.
+							</p>
+							<p>
+								This look-ahead being rule based instead of token based means it is potentially
+								infinite, but that also means that performance in both memory and speed can be worse
+								if the look-ahead is chosen poorly.  For LALR, the look-ahead is automatically one
+								token and the best rule can be chosen as the match, but the rule order and look-ahead
+								is under control of the grammar for Parsing Expression Grammars.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-parsing-direction">
+						<h1>Parsing Direction</h1>
+						<table>
+							<thead>
+							<tr>
+								<th></th>
+								<th>
+									Top-Down / Leftmost Derivation
+								</th>
+								<th>
+									Bottom-Up / Rightmost Derivation
+								</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<th>First Symbol</th>
+								<td>Root</td>
+								<td>Tokens</td>
+							</tr>
+							<tr>
+								<th>Building</th>
+								<th>Choses children for current rule</th>
+								<td>Combines tokens/rules</td>
+							</tr>
+							<tr>
+								<th>Last Symbol</th>
+								<th>Tokens</th>
+								<th>Root</th>
+							</tr>
+							<tr>
+								<th>Strength</th>
+								<td>Easier to write</td>
+								<td>Faster to run</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								Top-down parsing can be thought of using functions to try to match the beginning of the
+								input.  Inside each function, the child rules are called to see if they match.  If
+								all the child rules matches recursively, then top-down finds a match.
+							</p>
+							<p>
+								Bottom-up parsing starts with the leaf tokens and tries to reduce the right-most branches
+								into parent, and then ancestor nodes until getting to a root node that matches the
+								top-down parsing's entry point.
+							</p>
+							<p>
+								Bottom-up parser have the benefit of usually having linear bound on their parsing time
+								relative to the input size while top-down parsing can involve a lot of backtrack, but
+								the generated code is more human readable and debuggable.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-yecc-vs-grammar-kit-generated-code">
+						<h1>YECC vs Grammar Kit Generated Code</h1>
+						<table class="stretch">
+							<thead>
+							<tr>
+								<th>YECC</th>
+								<th>Grammar Kit</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<figure>
+										<figcaption>
+											<code>lib/elixir/src/elixir_parser.erl</code>
+										</figcaption>
+										<pre><code class="erlang stretch" data-trim>
+yeccpars2_6(S, '(', Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 40, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, ')', Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 288, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, ';', Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 289, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, '[', Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 43, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, kw_identifier, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 87, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, kw_identifier_safe, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 88, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, kw_identifier_unsafe, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 89, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, number, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 60, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, stab_op, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 290, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, '{', Ss, Stack, T, Ts, Tzr) ->
+ yeccpars1(S, 66, Ss, Stack, T, Ts, Tzr);
+yeccpars2_6(S, Cat, Ss, Stack, T, Ts, Tzr) ->
+ yeccpars2_cont_2(S, Cat, Ss, Stack, T, Ts, Tzr).
+										</code></pre>
+									</figure>
+								</td>
+								<td>
+									<figure>
+										<figcaption>
+											<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/gen/org/elixir_lang/parser/ElixirParser.java#L214-L235">
+												<code>gen/org/elixir_lang/parser/ElixirParser.java</code>
+											</a>
+										</figcaption>
+										<pre><code class="java stretch" data-trim style="font-size: 140%; line-height: 100%">
+public class ElixirParser implements PsiParser {
+  // COLON (ATOM_FRAGMENT | quote)
+  public static boolean atom(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "atom")) return false;
+    if (!nextTokenIs(b, COLON)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, COLON);
+    r = r && atom_1(b, l + 1);
+    exit_section_(b, m, ATOM, r);
+    return r;
+  }
+
+  // ATOM_FRAGMENT | quote
+  private static boolean atom_1(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "atom_1")) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, ATOM_FRAGMENT);
+    if (!r) r = quote(b, l + 1);
+    exit_section_(b, m, null, r);
+    return r;
+  }
+}
+										</code></pre>
+									</figure>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								YECC's generated code is very well optimized, handling individual characters or
+								atoms as tokens, while Grammar Kit's code is less optimized and more like if you
+								as a developer wrote the match functions.  Grammar Kit's methods match the rule
+								names while the yecc parse functions use number offsets.
+							</p>
+							<p>
+								This made debugging the generate parsers very easy, except that just like YECC's code,
+								you can't ask for the in progress AST.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-pratt-parsing-head">
+						<h1>Pratt Parsing - Head</h1>
+						<figure>
+							<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/gen/org/elixir_lang/parser/ElixirParser.java#L1804-L1842">
+								<code>gen/org/elixir_lang/parser/ElixirParser.java</code>
+							</a>
+							<pre><code class="java stretch" data-trim style="font-size: 125%; line-height: 100%">
+public class ElixirParser implements PsiParser {
+  /* ********************************************************** */
+  // Expression root: matchedExpression
+  // Operator priority table:
+  // 0: PREFIX(matchedExpressionCaptureOperation)
+  // 1: BINARY(matchedExpressionInMatchOperation)
+  // 2: BINARY(matchedExpressionWhenOperation)
+  // 3: BINARY(matchedExpressionTypeOperation)
+  // 4: BINARY(matchedExpressionPipeOperation)
+  // 5: BINARY(matchedExpressionMatchOperation)
+  // 6: BINARY(matchedExpressionOrOperation)
+  // 7: BINARY(matchedExpressionAndOperation)
+  // 8: BINARY(matchedExpressionComparisonOperation)
+  // 9: BINARY(matchedExpressionRelationalOperation)
+  // 10: BINARY(matchedExpressionArrowOperation)
+  // 11: BINARY(matchedExpressionInOperation)
+  // 12: BINARY(matchedExpressionTwoOperation)
+  // 13: BINARY(matchedExpressionAdditionOperation)
+  // 14: BINARY(matchedExpressionMultiplicationOperation)
+  // 15: BINARY(matchedExpressionHatOperation)
+  // 16: PREFIX(matchedExpressionUnaryOperation)
+  // 17: BINARY(matchedExpressionDotOperation)
+  // 18: PREFIX(matchedExpressionAtOperation)
+  // 19: ATOM(identifierExpression)
+  // 20: ATOM(accessExpression)
+  public static boolean matchedExpression(PsiBuilder b, int l, int g) {
+    if (!recursion_guard_(b, l, "matchedExpression")) return false;
+    addVariant(b, "&lt;matched expression&gt;");
+    boolean r, p;
+    Marker m = enter_section_(b, l, _NONE_, "&lt;matched expression&gt;");
+    r = matchedExpressionCaptureOperation(b, l + 1);
+    if (!r) r = matchedExpressionUnaryOperation(b, l + 1);
+    if (!r) r = matchedExpressionAtOperation(b, l + 1);
+    if (!r) r = identifierExpression(b, l + 1);
+    if (!r) r = accessExpression(b, l + 1);
+    p = r;
+    r = r && matchedExpression_0(b, l + 1, g);
+    exit_section_(b, l, m, null, r, p, null);
+    return r || p;
+  }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								The generated code I showed and the rules for parsing expression grammars say that left
+								recursion is impossible, so how am I allowed to have matched expression
+								(<code>matchedExpression</code>) as the left-most rule in a rule that's part of matched
+								expression (<code>matchedExpression</code>) itself?
+							</p>
+							<p>
+								Pratt parsing is an extension to recursive-descent parsers, which include parsing
+								expression grammars, that allows for optimization for parsing operators by noticing
+								patterns in how humans write binary operators to eliminate left-recursion.
+							</p>
+							<p>
+								The optimization involves noticing that eventually all operation rules get to
+								rules that aren't left-recursive or that are tokens, so the parser generator itself
+								can do the left-recursion elimination by looking for those non-left-recursive rules
+								first, then try to consume an operator, then do it all over again, but keep track
+								of the precedence of the operator.
+							</p>
+							<p>
+								Here, you can see that the prefix operations, matched expression unary operation
+								(<code>matchedExpressionUnaryOperation</code>) and matched expression at operation
+								(<code>matchedexpressionAtOperation</code>), can be checked for because they consume
+								an operator token first and so aren't left-recursive.
+							</p>
+							<p>
+								Likewise, identifier expression (<code>identifierExpression</code>) and access
+								expression (<code>accessExpression</code>) are atoms, so they don't include
+								matched expression (<code>matchedExpression</code>) at all and so can be used to
+								consume input immediately.
+							</p>
+							<p>
+								Once some input is consumed, matched expression (<code>matchedExpression</code>)
+								goes into matched expression underscore 0 (<code>matchedExpression_0</code>).  For
+								user written rules the underscore number system is unused for anonymous groups in
+								parentheses, but here's it's meant to indicate that the parser is checking the tail
+								of all the matched expression (<code>matchedExpression</code>) rules.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-pratt-parsing-tail">
+						<h1>Pratt Parsing - Tail</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/gen/org/elixir_lang/parser/ElixirParser.java#L1844-L1919">
+									<code>gen/org/elixir_lang/parser/ElixirParser.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 130%; line-height: 100%">
+public class ElixirParser implements PsiParser {
+ public static boolean matchedExpression_0(PsiBuilder b, int l, int g) {
+    if (!recursion_guard_(b, l, "matchedExpression_0")) return false;
+    boolean r = true;
+    while (true) {
+      Marker m = enter_section_(b, l, _LEFT_, null);
+      if (g &lt; 1 && matchedExpressionInMatchOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 1);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_IN_MATCH_OPERATION, r, true, null);
+      }
+      else if (g &lt; 2 && matchedExpressionWhenOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 1);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_WHEN_OPERATION, r, true, null);
+      }
+      else if (g &lt; 3 && matchedExpressionTypeOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 2);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_TYPE_OPERATION, r, true, null);
+      }
+      else if (g &lt; 4 && matchedExpressionPipeOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 3);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_PIPE_OPERATION, r, true, null);
+      }
+      else if (g &lt; 5 && matchedExpressionMatchOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 4);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_MATCH_OPERATION, r, true, null);
+      }
+      else if (g < 6 && matchedExpressionOrOperation_0(b, l + 1)) {
+        r = matchedExpression(b, l, 6);
+        exit_section_(b, l, m, MATCHED_EXPRESSION_OR_OPERATION, r, true, null);
+      }
+      // ...
+      else {
+        exit_section_(b, l, m, null, false, false, null);
+        break;
+      }
+    }
+    return r;
+  }								
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								The pattern used in matched expression (<code>matchedExpression</code>) and matced
+								expression zero (<code>matchedExpression_0</code>) is based on Douglas Crockford's
+								Top Down Operator Precedence implementation in Javascript.
+							</p>
+							<p>
+								<code>g</code> is the right-binding power of the currently matched operator.  Only
+								operators with a stronger binding power (because they are higher precedence) can
+								be matched when recursing, but if no stronger rule is matched on the recursive
+								call to matched expression (<code>matchedExpression</code>), then the while loop
+								allows for matching operators of equal right-binding power.
+							</p>
+							<p>
+								The left-associative, in match at the beginning and or at the end of the excerpt all
+								follow the pattern of recursive call to matched expression
+								(<code>matchedExpression</code>) with <code>g</code> one greater than the max for the
+								current operator (so g less than 1 and 1 is passed; g less than 6 and 6 is passed).
+								This ensures that adjacent left operators at the same level are matched by the while
+								loop, which are then properly left-nested by the underscore left
+								underscore (<code>_LEFT_</code>) directive in the <code>m</code> marker at the top of
+								while loop.
+							</p>
+							<p>
+								The underscore left underscore (<code>_LEFT_</code>) directive is similar how the
+								pipelines are rearranged in Elixir.
+							</p>
+							<p>
+								For right-associative operators, like when, type, pipe, and match, the if clauses
+								recursively calls matched expression (<code>matchedExpression</code> with
+								<code>g</code> that can match the current operator, which means adjacent
+								right-associative operators or any higher precedence operator is properly nested at a
+								lower level.  Since the parser is left-most derivation, any nesting occurs on the
+								right-end, so nesting gets the proper right-associative behavior.
+							</p>
+						</aside>
+					</section>
+					<section id="matched-expressions-associativity">
+						<h1>Associativity</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Associativity</th>
+								<th>Left</th>
+								<th>Right</th>
+							</tr>
+							<tr>
+								<th>Code</th>
+								<td>
+									<code>a or b || c</code>
+								</td>
+								<td>
+									<code>a ++ b <> c</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Nesting</th>
+								<td>
+									<ul>
+										<li>
+											<code>||</code>
+											<ul>
+												<li>
+													<code>or</code>
+													<ul>
+														<li>
+															<code>a</code>
+														</li>
+														<li>
+															<code>b</code>
+														</li>
+													</ul>
+												</li>
+												<li>
+													<code>c</code>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</td>
+								<td>
+									<ul>
+										<li>
+											<code>++</code>
+											<ul>
+												<li>
+													<code>a</code>
+												</li>
+												<li>
+													<code>&lt;&gt;</code>
+													<ul>
+														<li>
+															<code>b</code>
+														</li>
+														<li>
+															<code>c</code>
+														</li>
+													</ul>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<th>Effective Parentheses</th>
+								<td>
+									<code>(a or b) || c</code>
+								</td>
+								<td>
+									<code>a ++ (b <> c)</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Execution Pipeline</th>
+								<td>
+									a |> Kernel.or(b) |> Kernel.||(c)
+								</td>
+								<td>
+									a |> Kernel.++(b |> Kernel.<>(c))
+								</td>
+							</tr>
+							</thead>
+						</table>
+						<aside class="notes">
+							<p>
+								Instead of having to visual that in your head, let's see a nested example for
+								left- and right-associative operators.
+							</p>
+							<p>
+								I'm using the or operators, the word <code>or</code> and double pipes (<code>||</code>)
+								for the left-associative operator because they're easy to distingish.  Similarly,
+								I'm using the two operators, double plus (<code>++</code>) and diamond
+								(<code>&lt;&gt;</code>), for the right-associative operator.  Remember, the two
+								operators in each example are of the same precedence, so it's just the associativity
+								controlling the nesting.
+							</p>
+							<p>
+								For left-associative, the left-most operator becomes the root of the tree with
+								the right operand executing first, so it looks like the operators are in the wrong
+								order, but if you rearrange the nesting to pipeline order it makes sense.
+							</p>
+							<p>
+								For right-associative, reading the tree in order, it looks like it matches, the order
+								of the code, but when you change it to pipeline order you can see the the second
+								operation must actually complete at the same time as the first argument.
+							</p>
+						</aside>
+					</section>
+                    <section id="matched-expressions-v0.2.0">
+                        <h1>v0.2.0</h1>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Delta Days</th>
+                                <th>Total Days</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>2014&#8209;11&#8209;30</td>
+								<td>66</td>
+								<td>126</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <ul style="font-size: 35%">
+                            <li>
+                                <p>Enhancements</p>
+                                <ul>
+                                    <li>All valid escape sequences (<code>\&lt;character&gt;</code>, <code>\x&lt;hexadecimal&gt;</code>, <code>\x{&lt;hexadecimal&gt;}</code>,) are recognized.</li>
+                                    <li>Support for creation of Elixir modules</li>
+                                    <li>Use pygments' elixir_example.ex supplied by Alexei Sholik for Color Settings Page.<li>
+                                    <li><code>?</code> before any character or valid escape sequence will be recognized as a character token.</li>
+                                    <li><code>;</code> is recognized as EOL. <code>\r\n</code> and <code>\n</code> style EOL can be escaped with <code>\</code> and will be treated as whitespace.</li>
+                                    <li>Operator arity, associativity, and precedence</li>
+                                    <li>Decimal integers and floats</li>
+                                    <li>Identifiers (variable, function, and macro names)</li>
+                                    <li><code>...</code> identifier</li>
+                                    <li>Aliases (module names)</li>
+                                    <li>Keyword Identifiers</li>
+                                    <li>Empty Parentheses</li>
+                                    <li>In Operator</li>
+                                    <li>Dot Operator</li>
+                                    <li>Keyword Lists</li>
+                                    <li>Matched Expressions</li>
+                                    <li>Regular Keywords (<code>end</code>, <code>false</code>, <code>fn</code>, <code>nil</code>, and <code>true</code>)
+                                    <li>
+                                        <p>New attributes for parts of numbers on Color Settings Page</p>
+                                        <ul>
+                                            <li>Binary, Decimal, Hexadecimal, and Octal Digits</li>
+                                            <li>Decimal Exponent, Mark, and Separator</li>
+                                            <li>
+                                                <p>Invalid Binary, Decimal, Hexadecimal, and Octal Digits</p>
+                                                <ul>
+                                                    <li>2-9, A-Z, and a-z will be parsed as invalid binary digits</li>
+                                                    <li>8-9, A-Z, and a-z will be parsed as invalid octal digits</li>
+                                                    <li>G-Z and g-z will be parsed as invalid hexadecimal digits</li>
+                                                </ul>
+                                            </li>
+                                            <li>
+                                                <p>Non-Decimal Base Prefix</p>
+                                                <ul>
+                                                    <li>Any letter other than b, o, or x, in either case, will be recognized as an invalid whole number base</li>
+                                                </ul>
+                                            </li>
+                                            <li>Obsolete Non-Decimal Base Prefix (<code>B</code> for binary and <code>X</code> for hexadecimal)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Any digit, 0-9, A-Z, or a-z will be parsed as invalid for invalid whole number based numbers</li>
+                                    <li>Recovery for non-decimal whole numbers if the prefix is given, but no digits are given</li>
+
+                                </ul>
+                            </li>
+                            <li>
+                                <p>Bug Fixes</p>
+                                <ul>
+                                    <li>Sigil terminator escapes are recognized, so that sigils are no longer prematurely terminated.</li>
+                                    <li>Comments do not consume EOL, so trailing comments don't cause error parsing expression on following line.</li>
+                                    <li>Sigil modifiers now work on groups in addition to heredocs.</li>
+                                    <li><code>;</code> is separate from <code>EOL</code> and either or both can separate expressions, but only <code>EOL</code> can separate operators and operands for operations</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <p>Incompatible Changes</p>
+                                <ul>
+                                    <li>Recovery for non-decimal whole numbers if the prefix is given, but no digits are given</li>
+                                </ul>
+                            </li>
+                            <aside class="notes">
+                                <p>
+                                    Version zero dot one dot four (v0.1.4) wasn't released, so the next release, zero
+                                    dot two dot zero (v0.2.0) didn't come until one third of the way through the first
+                                    year of the project, on day 126.
+                                </p>
+                                <p>
+                                    It contained a plethora of changes and was the first time useful code, such as
+                                    mathematical operations could be recognized by the parser.
+                                </p>
+								<p>
+									But, as you can gather from the previous slides a lot of that time was me learning
+									the difference between YECC's LALR and Grammar Kit's Parsing Expression Grammar
+									with Pratt Parsing.
+								</p>
+                            </aside>
+                        </ul>
+                    </section>
+                </section>
 				<section id="bibliography">
                     <h1>Bibliography</h1>
 					<ul>
@@ -1949,6 +3209,11 @@ private literalWordsBody ::= WORDS_FRAGMENT*
 						<li>
 							<a href="https://en.wikipedia.org/wiki/Recursive_language">
 								Decidable Language
+							</a>
+						</li>
+						<li>
+							<a href="http://javascript.crockford.com/tdop/tdop.html">
+								Douglas Crockford's Top Down Operator Precedence
 							</a>
 						</li>
 					</ul>
