@@ -169,6 +169,20 @@
 							<li>
 								<a href="#/matched-expressions">Matched Expressions</a>
 							</li>
+							<li>
+								<ul>
+									<li>
+										<a href="#/no-parentheses-function-calls">No Parentheses Function Calls</a>
+									</li>
+									<li>
+										<a href="#/jinterface">JInterface</a>
+									</li>
+									<li>
+										<a href="#/v0.2.1">v0.2.1</a>
+									</li>
+								</ul>
+							</li>
+
 						</ul>
 					</section>
 				</section>
@@ -3315,6 +3329,838 @@ public class ElixirParser implements PsiParser {
                         </ul>
                     </section>
                 </section>
+				<section class="stack">
+					<section id="no-parentheses-function-calls">
+						<h1>No Parentheses Function Calls</h1>
+						<ul>
+						</ul>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="jinterface">
+						<h1>JInterface</h1>
+						<ul>
+							<li>
+								<a href="#/jinterface-quoted-vs-psi">Quoted vs PSI</a>
+							</li>
+							<li>
+								<a href="#/jinterface-node">Node</a>
+							</li>
+							<li>
+								<a href="#/jinterface-mailbox">Mailbox</a>
+							</li>
+							<li>
+								<a href="#/jinterface-message">Message</a>
+							</li>
+							<li>
+								<p>Quoted</p>
+								<ul>
+									<li>
+										<a href="#/jinterface-quoted-expected">Expected</a>
+									</li>
+									<li>
+										<p>Pattern</p>
+										<ul>
+											<li>
+												<a href="#/jinterface-quoted-pattern-yecc">YECC</a>
+											</li>
+											<li>
+												<a href="#/jinterface-quoted-pattern-intellij-elixir">IntelliJ Elixir</a>
+											</li>
+										</ul>
+									</li>
+									<li>
+										<a href="#/jinterface-quoted-actual">Actual</a>
+									</li>
+									<li>
+										<a href="#/jinterface-quoted-block">Block</a>
+									</li>
+									<li>
+										<a href="#/jinterface-quoted-comparison">Comparison</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/jinterface-char-list">Char List</a>
+							</li>
+							<li>
+								<a href="#/jinterface-protocol">Protocol</a>
+							</li>
+							</li>
+						</ul>
+					</section>
+					<section id="jinterface-quoted-vs-psi">
+						<h1>Quoted vs PSI</h1>
+						<table>
+							<caption>
+								<code>1 + 2 = 3 + 4</code>
+							</caption>
+							<thead>
+							<tr>
+								<th>
+									<code>Code.string_to_quoted!</code>
+								</th>
+								<th>
+									<code>psiToString</code>
+								</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<pre><code class="elixir fade-out fragment stretch" data-fragment-index="1" data-trim style="width: 40em">
+{:=, [line: 1], [{:+, [line: 1], [1, 2]}, {:+, [line: 1], [3, 4]}]}
+									</code></pre>
+									<pre><code class="elixir fragment stretch" data-fragment-index="1" data-trim>
+{
+ :=,
+ [line: 1],
+ [
+  {
+   :+,
+   [line: 1],
+   [
+    1,
+    2
+   ]
+  },
+  {
+   :+,
+   [line: 1],
+   [
+    3,
+    4
+   ]
+  }
+ ]
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="stretch" data-trim style="width: 43em">
+Elixir File(0,13)
+  ElixirMatchedMatchOperationImpl(MATCHED_MATCH_OPERATION)(0,13)
+    ElixirMatchedAdditionOperationImpl(MATCHED_ADDITION_OPERATION)(0,5)
+      ElixirAccessExpressionImpl(ACCESS_EXPRESSION)(0,1)
+        ElixirDecimalWholeNumberImpl(DECIMAL_WHOLE_NUMBER)(0,1)
+          ElixirDecimalDigitsImpl(DECIMAL_DIGITS)(0,1)
+            PsiElement(VALID_DECIMAL_DIGITS)('1')(0,1)
+      PsiWhiteSpace(' ')(1,2)
+      ElixirAdditionInfixOperatorImpl(ADDITION_INFIX_OPERATOR)(2,3)
+        PsiElement(DUAL_OPERATOR)('+')(2,3)
+      PsiWhiteSpace(' ')(3,4)
+      ElixirAccessExpressionImpl(ACCESS_EXPRESSION)(4,5)
+        ElixirDecimalWholeNumberImpl(DECIMAL_WHOLE_NUMBER)(4,5)
+          ElixirDecimalDigitsImpl(DECIMAL_DIGITS)(4,5)
+            PsiElement(VALID_DECIMAL_DIGITS)('2')(4,5)
+    PsiWhiteSpace(' ')(5,6)
+    ElixirMatchInfixOperatorImpl(MATCH_INFIX_OPERATOR)(6,7)
+      PsiElement(MATCH_OPERATOR)('=')(6,7)
+    PsiWhiteSpace(' ')(7,8)
+    ElixirMatchedAdditionOperationImpl(MATCHED_ADDITION_OPERATION)(8,13)
+      ElixirAccessExpressionImpl(ACCESS_EXPRESSION)(8,9)
+        ElixirDecimalWholeNumberImpl(DECIMAL_WHOLE_NUMBER)(8,9)
+          ElixirDecimalDigitsImpl(DECIMAL_DIGITS)(8,9)
+            PsiElement(VALID_DECIMAL_DIGITS)('3')(8,9)
+      PsiWhiteSpace(' ')(9,10)
+      ElixirAdditionInfixOperatorImpl(ADDITION_INFIX_OPERATOR)(10,11)
+        PsiElement(DUAL_OPERATOR)('+')(10,11)
+      PsiWhiteSpace(' ')(11,12)
+      ElixirAccessExpressionImpl(ACCESS_EXPRESSION)(12,13)
+        ElixirDecimalWholeNumberImpl(DECIMAL_WHOLE_NUMBER)(12,13)
+          ElixirDecimalDigitsImpl(DECIMAL_DIGITS)(12,13)
+            PsiElement(VALID_DECIMAL_DIGITS)('4')(12,13)
+									</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								Through part of version zero dot two dot one (<code>v0.2.1</code>), I had to manually
+								compare the PSI format output by the test cases for IntelliJ Elixir and the output of
+								code dot string to quoted (<code>Code.string_to_quoted</code>) in I-E-X
+								(<code>iex</code>).
+							</p>
+							<p>
+								It's not easy to compare quoted form to the PSI tree as shown. [hit twice enter]  So,
+								I normally would have to indent the quoted form to match the PSI tree.
+							</p>
+							<p>
+								So, I'd read this as there's an equals at the top level and that matches the elixir
+								matched match operation implementation (<code>ElixirMatchedMatchOperationImpl</code>).
+								Then, there's two additions operation siblings, which matches the elixir matched
+								addition operation implementations (<code>ElixirMatchedAdditionOperationImpl</code>)
+								siblings, but I have to know to ignore the PSIWhitespace and the elixir match infix
+								operator implementation (<code>ElixirMatchInfixOperatorImpl</code>) that's between
+								the two addition operations.  Finally, as I need to check that the operand order: one
+								two three four (<code>1 2 3 4</code>) matches.
+							</p>
+							<p>
+								I'd have to do this any time I changed the nesting of the grammar such as when
+								introducing new error handling or making some nodes private so they don't appear in the
+								output PSI.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-node">
+						<h1>Node</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/IntellijElixir.java">
+									<code>src/org/elixir_lang/IntellijElixir.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 170%; line-height: 100%">
+package org.elixir_lang;
+
+import com.ericsson.otp.erlang.OtpNode;
+
+import java.io.IOException;
+
+public class IntellijElixir {
+    private static OtpNode localNode = null;
+    public static final String REMOTE_NODE = "intellij_elixir@127.0.0.1";
+
+    public static OtpNode getLocalNode() throws IOException {
+        if (localNode == null) {
+            localNode = new OtpNode("intellij-elixir@127.0.0.1", "intellij_elixir");
+        }
+
+        return localNode;
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								IntelliJ's SDK is written in Java and I knew one could use Java to talk to Erlang
+								through JInterface, so I decided just have JInterface tell me if I got the PSI correct
+								by using nodes respond to <code>quote</code>, which would spit out JInterface objects
+								that matched the output from code dot string to quoted
+								(<code>Code.string_to_quoted</code>).
+							</p>
+							<p>
+								The first step in using JInterface is creating a Java node using O-T-P Node
+								(<code>OtpNode</code>).  The first argument is the node name.  I use a full name
+								instead of a short name so I can ensure that it binds to the IPv4 loop-back address,
+								127 dot 0 dot 0 dot 1 (<code>127.0.0.1</code>) so it doesn't randomly bind to the
+								IPv6 address or to 0 dot 0 dot 0 dot 0 (<code>0.0.0.0</code>), which would allow the
+								entire network to talk to the node.
+							</p>
+							<p>
+								The local and remote names are very close: the Java node uses a dash between intellij
+								and elixir while the Elixir node uses an underscore.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-mailbox">
+						<h1>Mailbox</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/intellij_elixir/Quoter.java#L222-L230">
+									<code>src/org/elixir_lang/intellij_elixir/Quoter.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 120%; line-height: 100%">
+package org.elixir_lang.intellij_elixir;
+
+public class Quoter {
+    public static OtpErlangTuple quote(@NotNull String code) throws IOException, OtpErlangExit, OtpErlangDecodeException {
+        final OtpNode otpNode = IntellijElixir.getLocalNode();
+        final OtpMbox otpMbox = otpNode.createMbox();
+
+        OtpErlangObject quoteMessage = Quoter.quoteMessage(code, otpMbox.self());
+        otpMbox.send(REMOTE_NAME, IntellijElixir.REMOTE_NODE, quoteMessage);
+
+        return (OtpErlangTuple) otpMbox.receive(TIMEOUT_IN_MILLISECONDS);
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								Once we have a node, we need a pid send so the Elixir code can talk back to Java.  Java
+								doesn't have processes, so instead of getting a process from the node and then getting its
+								pid, one instead creates a mailbox, which has a pid.
+							</p>
+							<p>
+								Java has no pattern matching, so <code>receive</code> just grabs the next message that is
+								available.  It's up to the Java code to maintain unmatched messages, but that wasn't
+								necessary here.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-message">
+						<h1>Message</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/intellij_elixir/Quoter.java#L237-L248">
+									<code>src/org/elixir_lang/intellij_elixir/Quoter.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 155%; line-height: 100%">
+package org.elixir_lang.intellij_elixir;
+
+public class Quoter {
+    public static OtpErlangObject quoteMessage(final String text, final OtpErlangPid self) {
+        final OtpErlangAtom[] messageKeys = new OtpErlangAtom[]{
+                new OtpErlangAtom("quote"),
+                new OtpErlangAtom("for")
+        };
+        final OtpErlangObject[] messageValues = new OtpErlangObject[]{
+                elixirString(text),
+                self
+        };
+
+        return new OtpErlangMap(messageKeys, messageValues);
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								A the time, I hadn't see Joe Devivo's code for gen_java, so I wasn't sure how to fake
+								a gen server call format message, so I just used a map.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-expected">
+						<h1>Quoted</h1>
+						<h2>Expected</h2>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij_elixir/blob/25d5ea28ed0d92aaf9bc7cdfcbeb3f8e019ad4e3/lib/intellij_elixir/supervisor.ex">
+									<code>lib/intellij_elixir/supervisor.ex</code>
+								</a>
+							</figcaption>
+							<pre><code class="elixir stretch" data-trim style="font-size: 130%; line-height: 100%">
+defmodule IntellijElixir.Supervisor do
+  use Supervisor
+
+  def start_link do
+    Supervisor.start_link(__MODULE__, :ok)
+  end
+
+  @quoter_module IntellijElixir.Quoter
+
+  def init(:ok) do
+    children = [
+      worker(@quoter_module, [[], [name: @quoter_module]])
+    ]
+
+    supervise(children, strategy: :one_for_one)
+  end
+end
+							</code></pre>
+						</figure>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij_elixir/blob/25d5ea28ed0d92aaf9bc7cdfcbeb3f8e019ad4e3/lib/intellij_elixir/quoter.ex">
+									<code>lib/intellij_elixir/quoter.ex</code>
+								</a>
+							</figcaption>
+							<pre><code class="elixir stretch" data-trim style="font-size: 130%; line-height: 100%">
+defmodule IntellijElixir.Quoter do
+  use GenServer
+
+  def start_link(args, opts \\ []) do
+    GenServer.start_link(__MODULE__, args, opts)
+  end
+
+  def handle_info(%{quote: code, for: pid}, state) do
+    {status, quoted} = Code.string_to_quoted(code)
+    send pid, {status, %{code: code, quoted: quoted}}
+
+    {:noreply, state}
+  end
+end
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								intellij underscore elixir (<code>intellij_elixir</code> is very simple:  it is
+								supervised gen server (<code>GenServer</code>) that takes the quote-for
+								(<code>%{quote:, for:}</code>) messages, runs code dot string to quoted
+								(<code>Code.string_to_quoted</code>) on the code and sends back the status and quoted
+								form.
+							</p>
+							<p>
+								Originally, I thought the supervisor was overkill, but it turned out very useful when
+								starting to test when the IntelliJ Elixir could parse around errors (as most IDEs do):
+								code dot string to quoted (<code>Code.string_to_quoted</code>), in addition to returning
+								tuples with ok (<code>:ok</code>) or error (<code>:error</code>) for the status can
+								also raise an exception, so with the supervisor, the quoter would restart for the next
+								test case and I got a nice exit message in Java.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-pattern-yecc">
+						<h1>Quoted</h1>
+						<h2>Pattern</h2>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L113-L189">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 145%; line-height: 100%">
+matched_expr -> matched_expr matched_op_expr : build_op(element(1, '$2'), '$1', element(2, '$2')).
+matched_expr -> matched_expr no_parens_op_expr : build_op(element(1, '$2'), '$1', element(2, '$2')).
+
+matched_op_expr -> match_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> add_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> mult_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> hat_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> two_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> and_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> or_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> in_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> in_match_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> type_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> when_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> pipe_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> comp_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> rel_op_eol matched_expr : {'$1', '$2'}.
+matched_op_expr -> arrow_op_eol matched_expr : {'$1', '$2'}.
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								In YECC, I have to repeat the pattern for quoting the tail of infix operations for each
+								tail.  The pattern is short, so it's not a big deal, but it's not easy to know that this
+								two tuple pattern is unrelated to the two tuple pattern used for keyword pairs.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-pattern-intellij-elixir">
+						<h1>Quoted</h1>
+						<h2>Pattern</h2>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/Elixir.bnf#L1048-L1067">
+									<code>src/org/elixir_lang/Elixir.bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim>
+matchedMatchOperation ::= matchedExpression matchInfixOperator matchedExpression
+                          { implements = "org.elixir_lang.psi.InfixOperation" methods = [quote] rightAssociative = true }
+
+matchedOrOperation ::= matchedExpression orInfixOperator matchedExpression
+                       { implements = "org.elixir_lang.psi.InfixOperation" methods = [quote] }
+							</code></pre>
+						</figure>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java#L525-L549">
+									<code>src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java#</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim>
+public class ElixirPsiImplUtil {
+    @Contract(pure = true)
+    @NotNull
+    public static OtpErlangObject quote(@NotNull final InfixOperation infixOperation) {
+        PsiElement[] children = infixOperation.getChildren();
+
+        if (children.length != 3) {
+            throw new NotImplementedException("BinaryOperation expected to have 3 children (left operand, operator, right operand");
+        }
+
+        Quotable leftOperand = (Quotable) children[0];
+        OtpErlangObject quotedLeftOperand = leftOperand.quote();
+
+        Quotable operator = (Quotable) children[1];
+        OtpErlangObject quotedOperator = operator.quote();
+
+        Quotable rightOperand = (Quotable) children[2];
+        OtpErlangObject quotedRightOperand = rightOperand.quote();
+
+        return quotedFunctionCall(
+                quotedOperator,
+                metadata(operator),
+                quotedLeftOperand,
+                quotedRightOperand
+        );
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								In Grammar Kit, I can have nodes implement interfaces, and then have methods defined
+								for those interfaces, so I can more explicitly indicate that the quoting pattern is
+								the same for match and or operation.
+							</p>
+							<p>
+								Of course, this being Java, it is much more verbose than the Erlang in YECC.
+							</p>
+							<p>
+								The error handle on children length is there because I wanted to make sure the
+								parser couldn't have silent errors where it ignores input if I ended up having to
+								make a systemic change the rules.  It also can prevent the IDE freezing that
+								version zero dot zero dot one (<code>v0.0.1</code>) exhibited.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-actual">
+						<h1>Quoted</h1>
+						<h2>Actual</h2>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java#L1075-L1099">
+									<code>src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 145%; line-height: 100%">
+package org.elixir_lang.psi.impl;
+
+public class ElixirPsiImplUtil {
+    public static OtpErlangObject quote(ElixirFile file) {
+        final Deque&lt;OtpErlangObject&gt; quotedChildren = new LinkedList&lt;OtpErlangObject&gt;();
+
+        file.acceptChildren(
+                new PsiElementVisitor() {
+                    @Override
+                    public void visitElement(PsiElement element) {
+                        if (element instanceof Quotable) {
+                            visitQuotable((Quotable) element);
+                        } else if (!isUnquoted(element)) {
+                            throw new NotImplementedException("Don't know how to visit " + element);
+                        }
+
+                        super.visitElement(element);
+                    }
+
+                    public void visitQuotable(@NotNull Quotable child) {
+                        final OtpErlangObject quotedChild = child.quote();
+                        quotedChildren.add(quotedChild);
+                    }
+                }
+        );
+
+        return block(quotedChildren);
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								P-S-I element (<code>PSIElement</code>) has an accept children
+								(<code>acceptChildren</code>) method that allows the code to quote a file by just
+								quoting the top-level elements and then turning it into a block.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-block">
+						<h1>Quoted</h1>
+						<h2>Block</h2>
+						<table>
+							<thead>
+							<tr>
+								<th>Erlang</th>
+								<th>Java</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<figure>
+										<figcaption>
+											<a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_parser.yrl#L717-L718">
+												<code>lib/elixir/src/elixir_parser.yrl</code>
+											</a>
+										</figcaption>
+										<pre><code class="erlang stretch" data-trim style="width: 32em">
+to_block([One]) -> One;
+to_block(Other) -> {'__block__', [], reverse(Other)}.
+										</code></pre>
+									</figure>
+								</td>
+								<td>
+									<figure>
+										<figcaption>
+											<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java#L118-L140">
+												<code>src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java</code>
+											</a>
+											<pre><code class="java stretch" data-trim style="width: 57em">
+package org.elixir_lang.psi.impl;
+
+public class ElixirPsiImplUtil {
+    @Contract(pure = true)
+    @NotNull
+    public static OtpErlangObject block(@NotNull final Deque&lt;OtpErlangObject&gt; quotedChildren) {
+        OtpErlangObject asBlock;
+        final int size = quotedChildren.size();
+
+        if (size == 0) {
+            asBlock = NIL;
+        } else if (size == 1) {
+            asBlock = quotedChildren.getFirst();
+        } else {
+            OtpErlangObject[] quotedArray = new OtpErlangObject[size];
+            OtpErlangList blockMetadata = new OtpErlangList();
+
+            asBlock = quotedFunctionCall(
+                    BLOCK,
+                    blockMetadata,
+                    quotedChildren.toArray(quotedArray)
+            );
+        }
+
+        return asBlock;
+    }
+}
+											</code></pre>
+										</figcaption>
+									</figure>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								to block (<code>to_block</code>) in Erlang and block (<code>block</code>) in Java are
+								similar, but of course, the Java code is way more verbose to make a tuple.
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-quoted-comparison">
+						<h1>Quoted</h1>
+						<h1>Comparison</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.1/src/org/elixir_lang/intellij_elixir/Quoter.java#L62-L103">
+									<code>src/org/elixir_lang/intellij_elixir/Quoter.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 95%; line-height: 100%">
+package org.elixir_lang.intellij_elixir;
+
+public class Quoter {
+    public static void assertQuotedCorrectly(PsiFile file) {
+        final String text = file.getText();
+
+        try {
+            OtpErlangTuple quotedMessage = Quoter.quote(text);
+            Quoter.assertMessageReceived(quotedMessage);
+
+            OtpErlangAtom status = (OtpErlangAtom) quotedMessage.elementAt(0);
+            String statusString = status.atomValue();
+            OtpErlangMap map = (OtpErlangMap) quotedMessage.elementAt(1);
+            assertCodeEquals(text, map);
+            OtpErlangObject expectedQuoted = quoted(map);
+
+            if (statusString.equals("ok")) {
+                OtpErlangObject actualQuoted = ElixirPsiImplUtil.quote(file);
+                assertEquals(expectedQuoted, actualQuoted);
+            } else if (statusString.equals("error")) {
+                OtpErlangTuple error = (OtpErlangTuple) expectedQuoted;
+
+                OtpErlangLong line = (OtpErlangLong) error.elementAt(0);
+
+                OtpErlangBinary messageBinary = (OtpErlangBinary) error.elementAt(1);
+                String message = javaString(messageBinary);
+
+                OtpErlangBinary tokenBinary = (OtpErlangBinary) error.elementAt(2);
+                String token = javaString(tokenBinary);
+
+                throw new AssertionError(
+                        "intellij_elixir returned \"" + message + "\" on line " + line + " due to " + token  +
+                                ", use assertQuotesAroundError if error is expect in Elixir natively, " +
+                                "but not in intellij-elixir plugin"
+                );
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (OtpErlangDecodeException e) {
+            throw new RuntimeException(e);
+        } catch (OtpErlangExit e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								The actual comparison comes down to just equals call between the actual quoted form
+								from the Elixir File and the expected quoted from code dot strin to quoted
+								(<code>Code.string_to_quoted</code>)
+							</p>
+						</aside>
+					</section>
+					<section id="jinterface-char-list">
+						<h1>Char List</h1>
+						<table>
+							<thead>
+							<tr>
+								<th colspan="2">Range</th>
+								<th rowspan="2">Java Class</th>
+							</tr>
+							<tr>
+								<th>Start</th>
+								<th>End</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>0</td>
+								<td>255</td>
+								<td>
+									<code>OtpErlangString</code>
+								</td>
+							</tr>
+							<tr>
+								<td>256</td>
+								<td>N/A</td>
+								<td>
+									<code>OtpErlangList</code>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								From the Basic Types of the Getting Started guide for Elixir or just messing around
+								in I-E-X (<code>iex</code>), we know that sometimes lists of numbers will render as
+								a single-quoted char list.  From this, we have a mental model that a char list is
+								just formatting decision: a list of whole numbers is rendered as a char list if all the
+								numbers are printable ASCII.
+							</p>
+							<p>
+								But, the name char list is much more precise: O-T-P erlang string
+								(<code>OtpErlangString</code>) is only returned from receive if all the numbers fit in
+								an unsigned char C type, i.e. 0 to 255.
+							</p>
+
+						</aside>
+					</section>
+					<section id="jinterface-protocol">
+						<h1>Protocol</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/erlang/otp/blob/1523be48ab4071b158412f4b06fe9c8d6ba3e73c/lib/jinterface/java_src/com/ericsson/otp/erlang/OtpInputStream.java#L1214-L1227">
+									<code>lib/jinterface/java_src/com/ericsson/otp/erlang/OtpInputStream.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 165%; line-height: 100%">
+package com.ericsson.otp.erlang;
+
+public class OtpInputStream extends ByteArrayInputStream {
+    public OtpErlangObject read_any() throws OtpErlangDecodeException {
+        // ...
+        switch(tag) {
+        // ...
+        case OtpExternal.stringTag:
+            return new OtpErlangString(this);
+
+        case OtpExternal.listTag:
+            return new OtpErlangList(this);
+        // ...
+        }
+    }
+}
+							</code></pre>
+						</figure>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/erlang/otp/blob/1523be48ab4071b158412f4b06fe9c8d6ba3e73c/lib/jinterface/java_src/com/ericsson/otp/erlang/OtpExternal.java#L59-L66">
+									<code>lib/jinterface/java_src/com/ericsson/otp/erlang/OtpExternal.java</code>
+								</a>
+							</figcaption>
+							<pre><code class="java stretch" data-trim style="font-size: 165%; line-height: 100%">
+package com.ericsson.otp.erlang;
+
+public class OtpExternal {
+    /** The tag used for empty lists */
+    public static final int nilTag = 106;
+
+    /** The tag used for strings and lists of small integers */
+    public static final int stringTag = 107;
+
+    /** The tag used for non-empty lists */
+    public static final int listTag = 108;
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								This isn't just an artifact of JInterface, the actual Erlang wire protocol uses a
+								different tag for Erlang Strings (in other words Elixir Char Lists) vs
+								generic strings.  It even goes so far to reserve a special tag for empty lists because
+								they are so common.
+							</p>
+						</aside>
+					</section>
+				</section>
+				<section id="v0.2.1">
+					<h1>v0.2.1</h1>
+					<table>
+						<thead>
+						<tr>
+							<th rowspan="2">Date</th>
+							<th colspan="2">Days</th>
+							<th colspan="2">Commits</th>
+							<th>Version</th>
+						</tr>
+						<tr>
+							<th>Delta</th>
+							<th>Total</th>
+							<th>Delta</th>
+							<th>Total</th>
+							<th>Commits/Day</th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr>
+							<td>2015&#8209;04&#8209;03</td>
+							<td>124</td>
+							<td>250</td>
+							<td>521</td>
+							<td>894</td>
+							<td>4.20</td>
+						</tr>
+						</tbody>
+					</table>
+					<ul>
+						<li>
+							<p>Enhancements</p>
+							<ul>
+								<li>
+									No parentheses function calls can occur as the right operand in binary infix operations or the sole
+									operand of unary prefix operation.
+								</li>
+								<li>
+									Function calls with neither parentheses nor <code>do</code> blocks that have at least 2 arguments: a
+									positional argument and keyword arguments or 2 or more positional argument(s) followed by optional keyword
+									arguments.
+								</li>
+								<li>Inspection that marks errors for ambiguous commas</li>
+								<li>Inspection that marks errors for ambiguous parentheses</li>
+								<li>Quick Fix for the ambiguous parentheses to remove the space between the function name and the opening parentheses.</li>
+								<li>Inspection that marks errors for missing end-of-expressions (`;` and newlines) between expressions.</li>
+								<li>Quick Fix to insert `;` for missing end-of-expression.</li>
+								<li>Quick Fix to insert newline for missing end-of-expression.</li>
+							</ul>
+						</li>
+						<li>
+							<p>Bug Fixes</p>
+							<ul>
+								<li>Right hand-side of dot_alias and dot_identifier was translated incorrectly. Only Aliases and Identifiers are allowed now.</li>
+							</ul>
+						</li>
+					</ul>
+					<aside class="notes">
+						<p>
+							The gap between version zero dot two dot zero (<code>v0.2.0</code>) and version zero
+							dot two dot one (<code>v0.2.1</code>) was 124 days, but involved 521 commits.  The release
+							included not only no parentheses function calls, but also a better way to automate testing
+							using JInterface.
+						</p>
+					</aside>
+				</section>
 				<section id="bibliography">
                     <h1>Bibliography</h1>
 					<ul>
