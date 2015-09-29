@@ -182,7 +182,9 @@
 									</li>
 								</ul>
 							</li>
-
+							<li>
+								<a href="#/significant-whitespace">Significant Whitespace</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -4883,6 +4885,393 @@ public class OtpExternal {
 							using JInterface.
 						</p>
 					</aside>
+				</section>
+				<section class="stack">
+					<section id="significant-whitespace">
+						<h1>Significant Whitespace</h1>
+						<ul>
+							<li>
+								<a href="#/significant-whitespace-comment-after-dot">
+									Comment After Dot
+								</a>
+							</li>
+							<li>
+								<a href="#/significant-whitespace-dot-operation">
+									<code>DOT_OPERATION</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/significant-whitespace-strip-dot-space">
+									<code>strip_dot_space</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/significant-whitespace-v0.3.3">
+									v0.3.3
+								</a>
+							</li>
+						</ul>
+					</section>
+					<section id="significant-whitespace-comment-after-dot">
+						<h1>Comment after Dot</h1>
+						<table style="font-size: 90%">
+							<caption>
+								Issue
+								<a href="https://github.com/elixir-lang/elixir/issues/3316">
+									#3316
+								</a>
+								<a href="https://github.com/elixir-lang/elixir/commit/970f84382bdcdb4621d62bb765f94f280d313c99">Fixed</a>
+								in Elixir v1.1.0
+							</caption>
+							<thread>
+								<tr>
+									<th colspan="2">Uncommented</th>
+									<th colspan="2">Commented</th>
+								</tr>
+								<tr>
+									<th>Code</th>
+									<th>Quoted</th>
+									<th>Code</th>
+									<th>Quoted</th>
+								</tr>
+							</thread>
+							<tbody>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 12em">
+Module.
+identifier
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 16em">
+{
+ :ok,
+ {
+  {
+   :.,
+   [line: 1],
+   [
+    {
+     :__aliases__,
+     [counter: 0, line: 1],
+     [:Module]
+    },
+    :function
+   ]
+  },
+  [line: 1],
+  []
+ }
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 12em">
+Module. # a comment
+identifier
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 16em">
+{
+ :ok,
+ {
+  {
+   :.,
+   [line: 1],
+   [
+    {
+     :__aliases__,
+     [counter: 0, line: 1],
+     [:Module]
+    },
+    :function
+   ]
+  },
+  [line: 1],
+  []
+ }
+}
+									</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 12em">
+Module.
+|>
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 16em">
+{
+ :ok,
+ {
+  {
+   :.,
+   [line: 1],
+   [
+    {
+     :__aliases__,
+     [counter: 0, line: 1],
+     [:Module]
+    },
+    :|>
+   ]
+  },
+  [line: 1],
+  []
+ }
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 12em">
+Module. # a comment
+|>
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 16em">
+{
+ :error,
+ {
+  2,
+  "syntax error before: ",
+  "'|>'"
+  }
+}
+									</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								The first bug I discovered in the native tokenizer involved how it handled dots and
+								comments: the fact that a dot preceded a token, and so the token should act as an
+								identifier wasn't tracked.  It just happened to work for identifiers because they're
+								always identifiers, but operators are only identifiers if only whitespace separates
+								the dot and the operator.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-dot-operation">
+						<h1>Dot Operation</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/22d358b28516aa2448d0cd032742d4a48fc61292/src/org/elixir_lang/Elixir.flex#L585-L828">
+									<code>src/org/elixir_lang/Elixir.flex</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 170%; line-height: 100%">
+&lt;YYINITIAL, INTERPOLATION&gt; {
+  {DOT_OPERATOR} { pushAndBegin(DOT_OPERATION);
+                   return ElixirTypes.DOT_OPERATOR; }
+}
+
+&lt;DOT_OPERATION&gt; {
+  {AND_OPERATOR} { yybegin(CALL_MAYBE);
+                   return ElixirTypes.AND_OPERATOR; }
+
+  /*
+   * Emulates strip_space in elixir_tokenizer.erl
+   */
+
+  {ESCAPED_EOL}|{WHITE_SPACE}+ { return TokenType.WHITE_SPACE; }
+  {EOL}                        { return ElixirTypes.EOL; }
+
+  {COMMENT}                    { return ElixirTypes.COMMENT; }
+
+  .                            { org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                                 handleInState(stackFrame.getLastLexicalState()); }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								In order to handle operators as identifiers, but only after dot, I had to add a dot
+								operation (<code>DOT_OPERATION</code>) state to elixir dot flex
+								(<code>Elixir.flex</code>).
+							</p>
+							<p>
+								Ensuring a operator works as an identifier was just a matter of adding the comment
+								(<code>{COMMENT}</code>) rule to the state so a comment would state in dot operation
+								(<code>DOT_OPERATION</code>), just like white space and E-O-L instead of using the catch
+								all rule that pops the stack.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-strip-dot-space">
+						<h1>
+							<a href="https://github.com/elixir-lang/elixir/commit/970f84382bdcdb4621d62bb765f94f280d313c99">
+								<code>strip_dot_space</code>
+							</a>
+						</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Before</th>
+								<th>Affer</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<pre><code class="erlang stretch" data-trim style="width: 45em">
+tokenize([$.|T], Line, Column, Scope, Tokens) ->
+  {Rest, Counter, Offset} = strip_space(T, 0, Column + 1),
+  handle_dot([$.|Rest], Line + Counter, Offset - 1, Column, Scope, Tokens);
+
+strip_space(T, Counter, Column) ->
+  case strip_horizontal_space(T) of
+    {"\r\n" ++ Rest, _} -> strip_space(Rest, Counter + 1, 1);
+    {"\n" ++ Rest, _}   -> strip_space(Rest, Counter + 1, 1);
+    {Rest, Length}      -> {Rest, Counter, Column + Length}
+  end.
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="erlang stretch" data-trim style="width: 48em">
+tokenize([$.|T], Line, Column, Scope, Tokens) ->
+  {Rest, Counter, Offset} = strip_dot_space(T, 0, Column + 1),
+  handle_dot([$.|Rest], Line + Counter, Offset - 1, Column, Scope, Tokens);
+
+strip_dot_space(T, Counter, Column) ->
+  case strip_horizontal_space(T) of
+    {"#" ++ Rest, _}    -> strip_dot_space(tokenize_comment(Rest), Counter, 1);
+    {"\r\n" ++ Rest, _} -> strip_dot_space(Rest, Counter + 1, 1);
+    {"\n" ++ Rest, _}   -> strip_dot_space(Rest, Counter + 1, 1);
+    {Rest, Length}      -> {Rest, Counter, Column + Length}
+  end.
+									</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								José's fix in Elixir itself follows a similar pattern of not just stripping spaces, but
+								also comments after dot.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-v0.3.3">
+						<h1>v0.3.0 through v0.3.3</h1>
+						<table style="font-size: 85%">
+							<thead>
+							<tr>
+								<th rowspan="2">Date</th>
+								<th colspan="2">Days</th>
+								<th colspan="2">Commits</th>
+								<th>Version</th>
+							</tr>
+							<tr>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Commits/Day</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>2015&#8209;05&#8209;15</td>
+								<td>42</td>
+								<td>292</td>
+								<td>135</td>
+								<td>1029</td>
+								<td>3.21</td>
+							</tr>
+							</tbody>
+						</table>
+						<ul style="font-size: 55%">
+							<li>
+								<p>Enhancements</p>
+								<ul>
+									<li>
+										<code>\x</code> is marked an error in CharLists, CharList Heredocs, Strings, and String Heredocs, but not
+										in any sigils.
+									</li>
+									<li>
+										New Elixir File will automatically underscore the camel case module name when creating the file name and
+										will convert qualifying aliases before the last <code>.</code> to directories.
+									</li>
+									<li>
+										File &gt; New &gt; Project From Existing Sources can be used in IntelliJ to setup the excludes, sources, tests,
+										SDK and libraries for an Elixir project that has already been created with <code>mix new</code>.
+									</li>
+									<li>
+										Operators can be qualified function names.
+									</li>
+									<li>
+										Anonymous function calls (<code>.(...)</code>)
+									</li>
+									<li>
+										Inspection that marks errors when keywords aren't at end of list.
+									</li>
+									<li>
+										<p>Remote function calls (<code>Alias.function</code>, <code>:atom.function</code>, etc) and local function calls (<code>function</code>) with...</p>
+										<ul>
+											<li>
+												<p>No Parentheses with...</p>
+												<ul>
+													<li>No Arguments (<code>Alias.function</code>)</li>
+													<li>Keywords (<code>Alias.function key: value</code>)</li>
+													<li>
+														Nested No Parentheses Call (<code>Alias.function Inner.function positional, key: value</code>)
+													</li>
+													<li>Positional and Keyword arguments (<code>Alias.function positional, key: value</code>)</li>
+													<li>Matched Expression (<code>Alias.function 1 + 2</code>)</li>
+												</ul>
+											</li>
+											<li>
+												<p>Parentheses with...</p>
+												<ul>
+													<li>No arguments (<code>Alias.function()</code>)</li>
+													<li>No Parentheses Call (<code>Alias.function(Inner.function positional, key: value</code>)</li>
+													<li>Keywords (<code>Alias.function(key: value)</code>)</li>
+													<li>Positional and Keyword arguments (<code>Alias.function(positional, key: value)</code>)</li>
+													<li>Trailing parentheses for quoting (<code>def unquote(variable)(positional)</code>)</li>
+												</ul>
+											</li>
+										</ul>
+									</li>
+									<li>Bracket expressions (<code>foo[key]</code>)</li>
+								</ul>
+							</li>
+							<li>
+								<p>Bug Fixes</p>
+								<ul>
+									<li>
+										Fix
+										<code>
+											NoSuchElementException
+										</code>
+										when no suggested SDK home paths are available.  Thanks to
+										<a href="https://github.com/zyuyou">
+											zyuyou
+										</a>
+										for
+										<a href="https://github.com/KronicDeth/intellij-elixir/issues/120">
+											reporting
+										</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<p>Incompatible Changes</p>
+								<ul>
+									<li>
+										New Elixir File validates that the name is a valid Alias, so each `.` separated part must start with a
+										capital letter.  Previous New Elixir File validated that the name was a valid path, and so forced the name
+										to be lowercase.
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
 				</section>
 				<section id="bibliography">
                     <h1>Bibliography</h1>
