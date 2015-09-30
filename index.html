@@ -191,6 +191,12 @@
 							<li>
 								<a href="#/unmatched-expressions">Unmatched Expressions</a>
 							</li>
+							<li>
+								<a href="#/parsing-elixir-lang-elixir">
+									Parsing
+									<code>elixir-lang/elixir</code>
+								</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -6168,7 +6174,7 @@ noParenthesesOneArgument ::= // ...
 					</section>
 					<section id="unmatched-expressions-v0.3.5">
 						<h1>v0.3.5</h1>
-						<table style="font-size: 85%">
+						<table>
 							<thead>
 							<tr>
 								<th rowspan="2">Date</th>
@@ -6213,6 +6219,459 @@ noParenthesesOneArgument ::= // ...
 								</ul>
 							</li>
 						</ul>
+					</section>
+				</section>
+				<section class="stack">
+					<section>
+						<h1>Parsing <code>elixir-lang/elixir</code></h1>
+						<ul>
+							<li>
+								<a href="#/parsing-elixir-lang-elixir-function-captures">
+									Function Captures
+								</a>
+							</li>
+							<li>
+								<a href="#/parsing-elixir-lang-elixir-v1.0.0">
+									v1.0.0
+								</a>
+							</li>
+						</ul>
+						<aside class="notes">
+							<p>
+								Before releasing version one dot zero dot zero, I wanted to make sure I hadn't missed
+								some syntax that was valid, but that I hadn't thought of when manually writing snippets
+								of Elixir as test cases.  I couldn't use something like quick check to generate fake
+								Elixir problems because if I messed up the Grammar Kit grammar I'd like mess up the
+								quick check model in the same way, so instead I decided to test the IntelliJ Elixir by
+								having it parse all the dot E-X files in the elixir lang elixir
+								(<code>elixir-lang/elixir</code>) standard libraries.
+							</p>
+							<p>
+								This did find bugs in my grammar, but it also found bugs in the native tokenizer and
+								parser!
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-function-captures">
+						<h1>Function Captures</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Code</th>
+								<th>Quoted</th>
+							</tr>
+							</thead>
+							<tbody style="font-size: 65%">
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 11em">
+&Module.function/2
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 34em">
+{
+ :&,
+ [line: 1],
+ [
+  {
+   :/,
+   [line: 1],
+   [
+    {
+     {
+      :.,
+      [line: 1],
+      [
+       {:__aliases__, [counter: 0, line: 1], [:Module]},
+       :function
+      ]
+     },
+     [line: 1],
+     []
+    },
+    2
+   ]
+  }
+ ]
+}
+									</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 7em">
+&function/2
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 19em">
+{
+ :&,
+ [line: 1],
+ [
+  {
+   :/,
+   [line: 1],
+   [
+    {:function, [line: 1], nil},
+    2
+   ]
+  }
+ ]
+}
+									</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 3em">
+&||/2
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 19em">
+{
+ :&,
+ [line: 1],
+ [
+  {
+   :/,
+   [line: 1],
+   [
+    {:||, [line: 1], nil},
+    2
+   ]
+  }
+ ]
+}
+									</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 3em">
+&or/2
+									</code></pre>
+								</td>
+								<td>
+									Error
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								The function capture syntax has multiple variants: a remote function, a local function,
+								a local symbolic operator, and a local non-symbolic operator.
+							</p>
+							<p>
+								It turned out that the standard library never contained any local function references to
+								the English word operators like <code>and</code> or <code>or</code>.  I only taught the
+								error because I already had tests setup to test all variant of an operator of the same
+								precedence, so double and triple pipe were tested the same as the word <code>or</code>.
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-reference-operation">
+						<h1>
+							<code>REFERENCE_OPERATION</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v1.0.0/src/org/elixir_lang/Elixir.flex#L160-L583">
+									<code>src/org/elixir_lang/Elixir.flex</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim>
+TWO_TOKEN_OR_OPERATOR = "or" |
+                        "||"
+
+TWO_TOKEN_OPERATOR = {TWO_TOKEN_AND_OPERATOR} |
+                     {TWO_TOKEN_ARROW_OPERATOR} |
+                     {TWO_TOKEN_ASSOCIATION_OPERATOR} |
+                     {TWO_TOKEN_COMPARISON_OPERATOR} |
+                     {TWO_TOKEN_IN_MATCH_OPERATOR} |
+                     {TWO_TOKEN_OR_OPERATOR} |
+                     {TWO_TOKEN_RELATIONAL_OPERATOR} |
+                     {TWO_TOKEN_STAB_OPERATOR} |
+                     {TWO_TOKEN_TUPLE_OPERATOR} |
+                     {TWO_TOKEN_TWO_OPERATOR} |
+                     {TWO_TOKEN_TYPE_OPERATOR}
+
+REFERENCABLE_OPERATOR = {FOUR_TOKEN_OPERATOR} |
+                        {THREE_TOKEN_OPERATOR} |
+                        {TWO_TOKEN_OPERATOR} |
+                        {ONE_TOKEN_REFERENCABLE_OPERATOR}
+
+REFERENCE_OPERATOR = "/"
+REFERENCE_INFIX_OPERATOR = ({WHITE_SPACE}|{EOL})*{REFERENCE_OPERATOR}
+
+&lt;YYINITIAL, INTERPOLATION&gt; {
+ {REFERENCABLE_OPERATOR} / {REFERENCE_INFIX_OPERATOR} { pushAndBegin(REFERENCE_OPERATION);
+                                                         return ElixirTypes.IDENTIFIER; }
+}
+
+&lt;REFERENCE_OPERATION&gt; {
+  {ESCAPED_EOL}|{WHITE_SPACE}+ { return TokenType.WHITE_SPACE; }
+  {EOL}                        { return ElixirTypes.EOL; }
+  {REFERENCE_OPERATOR}         { org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                                 yybegin(stackFrame.getLastLexicalState());
+                                 return ElixirTypes.MULTIPLICATION_OPERATOR; }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								While reference syntax does end up quoting as just like division, I did need to have
+								special handling in the lexer for operator references because I had to lex them as
+								<code>IDENTIFIER</code> tokens because I couldn't figure out how to have the parser
+								distinguish incorrectly used operators otherwise.
+							</p>
+							<p>
+								Because I can use regular expressions in JFlex, I can just have a regular expression of
+								operators, including both symbolic and non-symbolic operators.
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-operator-kw">
+						<h1>
+							Issue <a href="https://github.com/elixir-lang/elixir/issues/3486">#3486</a>
+							<a href="https://github.com/elixir-lang/elixir/pull/3571">fixed</a> in v1.1.0
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/jisaacstone/elixir/blob/add22f4b5b793a123cc2efd294844ef715469d04/lib/elixir/src/elixir_tokenizer.erl#L90-L984">
+									<code>lib/elixir/src/elixir_tokenizer.erl</code>
+								</a>
+							</figcaption>
+							<pre><code class="erlang stretch" data-trim style="font-size: 150%; line-height: 100%">
+-define(operator_kw(A),
+  A == 'and';
+  A == 'or';
+  A == 'when';
+  A == 'not';
+  A == 'in').
+
+check_keyword(_Line, _Column, _Length, Atom, [{capture_op, _, _}|_]) when ?operator_kw(Atom) ->
+  nomatch;
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								The bug was fixed by John Isaac Stone in the Elixir tokenizer by adding a clause that
+								peeks at the top of the already tokenized operators and treats keyword operators as
+								normal identifiers if a capture operation just happened instead of looking ahead to
+								see if there is a forward slash the way I did it.
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-piping-blocks">
+						<h1>Piping blocks</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/e02d7bf913f3e5ea8c9e49648e69324ec5c65919/lib/mix/lib/mix/tasks/deps.clean.ex#L55-L61">
+									<code>lib/mix/lib/mix/tasks/deps.clean.ex</code>
+								</a>
+								<pre><code class="elixir stretch" data-trim>
+defmodule Mix.Tasks.Deps.Clean do
+  defp checked_deps(build, deps) do
+    for root <- [deps, build],
+        path <- Path.wildcard(Path.join(root, "*")),
+        File.dir?(path) do
+      Path.basename(path)
+    end
+    |> Enum.uniq()
+    |> List.delete(to_string(Mix.Project.config[:app]))
+  end
+end
+								</code></pre>
+							</figcaption>
+						</figure>
+						<aside class="notes">
+							<p>
+								Surprisingly, there was only one place in elixir-lang/elixir where a pipeline starts
+								with function with a do block: in the deps dot clean Mix taks.
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-unmatched-associativity">
+						<h1>
+							<a href="https://groups.google.com/forum/#!topic/elixir-lang-core/W0sjGdeSva0">Issue</a>
+							<a href="https://github.com/elixir-lang/elixir/commit/3e52ed0fbbc09a156e6ea180baff3b89a8da183e">Fixed</a>
+							in v1.1.0
+						</h1>
+						<table>
+							<thead>
+							<tr>
+								<th></th>
+								<th>Matched</th>
+								<th>Unmatched</th>
+							</tr>
+							</thead>
+							<tbody style="font-size: 200%; line-height: 100%">
+							<tr>
+								<th>Code</th>
+								<td>
+									<pre><code class="elixir stretch" data-trim>
+one
+|> two
+|> three
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim>
+one do end
+|> two
+|>
+									</code></pre>
+								</td>
+							</tr>
+							<tr>
+								<th>Quoted</th>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 16em">
+{
+ :|>,
+ [line: 3],
+ [
+  {
+   :|>,
+   [line: 2],
+   [
+    {:one, [line: 1], nil},
+    {:two, [line: 2], nil}
+   ]
+  },
+  {:three, [line: 3], nil}
+ ]
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="width: 20em">
+{
+ :|>,
+ [line: 2],
+ [
+  {:one, [line: 1], [[do: nil]]},
+   {
+    :|>,
+    [line: 3],
+    [
+     {:two, [line: 2], nil},
+     {:three, [line: 3], nil}
+   ]
+  }
+ ]
+}
+									</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								The arrow operators, including the pipeline operator, are left-associative, but
+								when the operand in the pipeline is an umatched expression, then the quoted
+								form made it look effectively right-associative.
+							</p>
+							<p>
+								I thought I had missed some post-processing in the Erlang code, but José Valim confirmed
+								it was a bug in the native parser due to in his word, "`bar pipe baz` ends up being
+								reduced first as the current grammar rules forced so to happen".
+							</p>
+							<p>
+								So, because I used a different class of parser that doesn't do reduce and shift operations,
+								I was able to stumble upon this bug.  Having more test cases, because I didn't trust
+								my own understanding of the original grammar and how to translate it to Grammar Kit
+								also let me find the other bugs, so an alternative implementation is a good way to
+								ensure a tokenizer and parser for a langauge has covered all the edge cases.
+							</p>
+						</aside>
+					</section>
+					<section id="parsing-elixir-lang-elixir-v1.0.0">
+						<h1>v1.0.0</h1>
+						<table>
+							<thead>
+							<tr>
+								<th rowspan="2">Date</th>
+								<th colspan="2">Days</th>
+								<th colspan="2">Commits</th>
+								<th colspan="2">Version</th>
+							</tr>
+							<tr>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Commits/Day</th>
+								<th>Name</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>2015&#8209;07&#8209;27</td>
+								<td>19</td>
+								<td>365</td>
+								<td>158</td>
+								<td>1356</td>
+								<td>2.44</td>
+								<td>1.0.0</td>
+							</tr>
+							</tbody>
+						</table>
+						<ul style="font-size: 75%">
+							<li>
+								<p>Enhancements</p>
+								<ul>
+									<li>Update ant build on travis-ci.org to use IDEA 14.1.4 (from 14.0.2)</li>
+									<li>Parser is verified to quote the same as native Elixir</li>
+								</ul>
+							</li>
+							<li>
+								<p>Bug Fixes</p>
+								<ul>
+									<li>Fix parsing of unary vs binary +/- with leading and trailing spaces and newlines</li>
+									<li>Allow EOL between list arguments and <code>]</code></li>
+									<li>
+										Relative identifiers after <code>.</code> that start with <code>and</code>, <code>or</code>, and
+										<code>not</code> will be lexed as a single identifier instead of <code>and</code>, <code>or</code>, or
+										<code>not</code> followed by another identifier.
+									</li>
+									<li><code>end</code> is allowed as a relative identifier after <code>.</code></li>
+									<li>Fix <code>(...)</code> as part of matched expression in no parentheses stab signature</li>
+									<li>Allow multiple newlines to mark the end of an expression, but only one <code>;</code></li>
+									<li>
+										Allow operators in function references (<code>&lt;op&gt;/&lt;arity&gt;</code>) for function captures
+										(<code>&amp;&lt;op&gt;/&lt;arity&gt;</code>)
+									</li>
+									<li><code>unquote_splicing</code> is properly wrapped in <code>__block__</code> when in stab bodies</li>
+									<li>Check for matching terminator in heredocs when determining white space type at beginning of line</li>
+									<li>Allow &lt;space&gt;+&lt;EOL&gt; to count as addition</li>
+									<li>Unary expressions inside parentheses are no longer marked <code>ambiguous_op: nil</code></li>
+									<li>
+										Differentiate between <code>Qualifier.'relative'()</code> vs <code>Qualifier.'relative' ()</code> and
+										<code>Qualifier."relative"()</code> vs <code>Qualifier."relative" ()</code>
+									</li>
+									<li>Fix link to Elixir website in README</li>
+									<li>All tokens have human-readable names and/or expected characters for better error messages</li>
+								</ul>
+								<p>Incompatible Changes</p>
+								<ul>
+									<li>
+										New Elixir File has moved to the last item in the New File menu to preserve <code>CTRL+N ENTER</code>
+										keyboard shortcut for <code>New &gt; File</code>
+									</li>
+								</ul>
+							</li>
+						</ul>
+						<aside class="notes">
+							<p>
+								One year, one thousand three hundred fifty six commits, 3 bugs in native Elixir and the
+								parser was complete.  The plugin had reached my goal for version one dot zero dot zero.
+							</p>
+						</aside>
 					</section>
 				</section>
 				<section id="bibliography">
