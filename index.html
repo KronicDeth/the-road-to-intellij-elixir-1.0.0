@@ -4910,6 +4910,21 @@ public class OtpExternal {
 									v0.3.3
 								</a>
 							</li>
+							<li>
+								<a href="#/significant-whitespace-arguments-vs-calss">
+									Arguments vs Calls
+								</a>
+							</li>
+							<li>
+								<a href="#/significant-whitespace-bracket-identifier-and-paren-identifier">
+									<code>bracket_identifier</code> and <code>paren_identifier</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/significant-whitespace-zero-width-call">
+									<code>CALL</code>
+								</a>
+							</li>
 						</ul>
 					</section>
 					<section id="significant-whitespace-comment-after-dot">
@@ -5154,6 +5169,264 @@ strip_dot_space(T, Counter, Column) ->
 							<p>
 								José's fix in Elixir itself follows a similar pattern of not just stripping spaces, but
 								also comments after dot.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-arguments-vs-calls">
+						<h1>Arguments vs Calls</h1>
+						<table>
+							<thead>
+							<tr>
+								<th rowspan="2"></th>
+								<th colspan="2">No Space</th>
+								<th colspan="2">Space</th>
+							</tr>
+							<tr>
+								<th>Code</th>
+								<th>Quoted</th>
+								<th>Code</th>
+								<th>Quoted</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<th>Parentheses</th>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 12em">
+function(positional)
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 19em">
+{
+ :function,
+ [line: 1],
+ [
+  {:positional, [line: 1], nil}
+ ]
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 11em">
+function (grouped)
+									</code></pre>
+								</td>
+								<td>
+									Error
+								</td>
+							</tr>
+							<tr>
+								<th>Brackets</th>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 6em">
+dict[key]
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stetch" data-trim style="font-size: 135%; line-height: 100%; width: 16em">
+{
+ {
+  :.,
+  [line: 1],
+  [Access, :get]
+ },
+ [line: 1],
+ [
+  {:dict, [line: 1], nil},
+  {:key, [line: 1], nil}
+ ]
+}
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 11em">
+function [element]
+									</code></pre>
+								</td>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 135%; line-height: 100%; width: 18em">
+{
+ :function,
+ [line: 1],
+ [
+  [
+   {:element, [line: 1], nil}
+  ]
+ ]
+}
+									</code></pre>
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								The only thing that separates an ambiguous parentheses and a parenthetical function
+								call is the space between the identifier and the opening parentheses.
+							</p>
+							<p>
+								Worse, a space or no space between an identifier and an opening square bracket is both
+								valid: no space and it's a bracket operation, which used the access protocol; a
+								space and it's a list as a argument to a no parentheses call.
+							</p>
+							<p>
+								So, in order to support no parentheses function calls, parentheses function calls, and
+								brackets, the space or lack thereof, becomes significant.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-bracket-identifier-and-paren-identifier">
+						<h1>Bracket and Paren Identifier</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.14.3/lib/elixir/src/elixir_tokenizer.erl#L454-L822">
+									<code>lib/elixir/src/elixir_tokenizer.erl</code>
+								</a>
+							</figcaption>
+							<pre><code class="erlang stretch" data-trim style="font-size: 130%; line-height: 100%">
+tokenize([H|_] = String, Line, Scope, Tokens) when ?is_downcase(H); H == $_ ->
+  case tokenize_any_identifier(String, Line, Scope, Tokens) of
+    {keyword, Rest, Check, T} ->
+      handle_terminator(Rest, Line, Scope, Check, T);
+    {identifier, Rest, Token} ->
+      tokenize(Rest, Line, Scope, [Token|Tokens]);
+    {error, _, _, _} = Error ->
+      Error
+  end;
+
+tokenize_any_identifier(Original, Line, Scope, Tokens) ->
+  {Rest, Identifier} = tokenize_identifier(Original, []),
+
+  {AllIdentifier, AllRest} =
+    case Rest of
+      [H|T] when H == $?; H == $! -> {Identifier ++ [H], T};
+      _ -> {Identifier, Rest}
+    end,
+
+  case unsafe_to_atom(AllIdentifier, Line, Scope) of
+    {ok, Atom} ->
+      tokenize_kw_or_other(AllRest, identifier, Line, Atom, Tokens);
+    {error, Reason} ->
+      {error, Reason, Original, Tokens}
+  end.
+
+tokenize_kw_or_other(Rest, Kind, Line, Atom, Tokens) ->
+  case check_keyword(Line, Atom, Tokens) of
+    nomatch ->
+      {identifier, Rest, check_call_identifier(Kind, Line, Atom, Rest)};
+    {ok, [Check|T]} ->
+      {keyword, Rest, Check, T};
+    {error, Token} ->
+      {error, {Line, "syntax error before: ", Token}, atom_to_list(Atom) ++ Rest, Tokens}
+  end.
+
+check_call_identifier(_Kind, Line, Atom, [$(|_]) -> {paren_identifier, Line, Atom};
+check_call_identifier(_Kind, Line, Atom, [$[|_]) -> {bracket_identifier, Line, Atom};
+check_call_identifier(Kind, Line, Atom, _Rest)   -> {Kind, Line, Atom}.
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								The Elixir tokenizer handles the no space and space situation by using separate tokens
+								for identifier if there is no space: bracket identifier
+								(<code>bracket_identifier</code>) when before an opening square bracket and paren
+								identifier (<code>paren_identifier</code>) when before an opening parenthesis.
+							</p>
+							<p>
+								How it gets to that point is somewhat long, from tokenizing an underscore or a lower
+								case letter, it has to decide whether the identifier is a keyword or not.  While
+								deciding if it's a keyword, it checks if it's a call identifier or a normal identifier.
+								If it's a call identifier then it's broken down into a bracket identifier, paren
+								identifier or normal identifier.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-zero-width-call">
+						<p>Zero-Width Call</p>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.3.3/src/org/elixir_lang/Elixir.flex#L616-L810">
+									<code>src/org/elixir_lang/Elixir.flex</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 150%; line-height: 100%">
+&lt;YYINITIAL, INTERPOLATION&gt; {
+  {IDENTIFIER} { pushAndBegin(CALL_OR_KEYWORD_PAIR_MAYBE);
+                 return ElixirTypes.IDENTIFIER; }
+}
+
+&lt;CALL_MAYBE, CALL_OR_KEYWORD_PAIR_MAYBE&gt; {
+  {OPENING_BRACKET}|{OPENING_PARENTHESIS} { org.elixir_lang.lexer.StackFrame stackFrame = pop();
+                                            handleInState(stackFrame.getLastLexicalState());
+                                            // zero-width token
+                                            return ElixirTypes.CALL; }
+}
+
+&lt;DOT_OPERATION&gt; {
+  {AND_OPERATOR} { yybegin(CALL_MAYBE);
+                   return ElixirTypes.AND_OPERATOR; }
+}
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								Because tokens are tided to highlighting in the JetBrains API, I didn't want to have
+								to have separate bracket and parentheses identifier.  It would also be more complicated
+								for me because operators and quoted need to be bracket and parentheses identifier, but
+								I can't tokenize them that way with JFlex.
+							</p>
+							<p>
+								So, instead of changing the identifier token type, I added a zero-width
+								<code>CALL</code> token for when something that could act as an identifer is immediately
+								followed by an opening bracket or a parentheses.
+							</p>
+							<p>
+								I needed a token for when there WASN'T a space instead of when there is a space because
+								whitepace tokens are stripped when going from the tokenizer to the parser and I'd have
+								had to change more rules to have significant white space instead of significant
+								non-space.
+							</p>
+						</aside>
+					</section>
+					<section id="significant-whitespace-operations">
+						<h1>Operations</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.3.3/src/org/elixir_lang/Elixir.bnf#L932-L1493">
+									<code>src/org/elixir_lang/Elixir.bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 120%; line-height: 100%">
+matchedExpression ::= matchedBracketOperation |
+                      matchedQualifiedBracketOperation |
+                      matchedQualifiedParenthesesCall |
+                      matchedQualifiedNoArgumentsCall |
+                      matchedUnqualifiedParenthesesCall |
+                      matchedUnqualifiedBracketOperation |
+                      variable |
+                      accessExpression
+
+matchedParenthesesArguments ::= CALL parenthesesArguments parenthesesArguments?
+
+matchedBracketOperation ::= matchedExpression bracketArguments
+matchedQualifiedBracketOperation ::= matchedExpression dotInfixOperator relativeIdentifier CALL bracketArguments
+matchedQualifiedParenthesesCall ::= matchedExpression dotInfixOperator relativeIdentifier matchedParenthesesArguments
+matchedQualifiedNoArgumentsCall ::= matchedExpression dotInfixOperator relativeIdentifier !CALL
+matchedUnqualifiedParenthesesCall ::= IDENTIFIER matchedParenthesesArguments
+matchedUnqualifiedBracketOperation ::= IDENTIFIER CALL bracketArguments
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								With the zero-width <code>CALL</code> token, all the calls that allow parentheses can
+								use the matched parentheses arguments (<code>matchedParenthesesArguments</code>) rule,
+								which ensures there is no whitespace.
+							</p>
+							<p>
+								matched qualified no arguments call (<code>matchedQualifiedNoArgumentsCall</code>) needs
+								to do a negative look-ahead for <code>CALL</code> because it can be a right-operand
+								of a further qualifiers or it will quote incorrectly.
 							</p>
 						</aside>
 					</section>
