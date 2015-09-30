@@ -188,6 +188,9 @@
 							<li>
 								<a href="#/stab">Stab</a>
 							</li>
+							<li>
+								<a href="#/unmatched-expressions">Unmatched Expressions</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -5850,6 +5853,366 @@ accessExpression ::= anonymousFunction |
 								the map, struct, tuples and bit string container types.
 							</p>
 						</aside>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="unmatched-expressions">
+						<h1>Unmatched Expressions</h1>
+						<ul>
+							<li>
+								<a href="#/unmatched-expressions-unmatched-expr">
+									<code>unmatched_expr</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-block-expr">
+									<code>block_expr</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-block-list">
+									<code>block_list</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-block-identifier">
+									<code>block_identifier</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-dangling-else-problem">
+									Dangling Else Problem
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-unmatched-expression">
+									<code>unmatchedExpression</code>
+								</a>
+							</li>
+							<li>
+								<a href="#/unmatched-expressions-v0.3.5">
+									v0.3.5
+								</a>
+							</li>
+						</ul>
+					</section>
+					<section id="unmatched-expressions-unmatched-expr">
+						<h1>
+							<code>unmatched_expr</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_parser.yrl#L89-L154">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 155%; line-height: 100%">
+expr -> unmatched_expr : '$1'.
+
+unmatched_expr -> empty_paren op_expr : build_op(element(1, '$2'), nil, element(2, '$2')).
+unmatched_expr -> matched_expr op_expr : build_op(element(1, '$2'), '$1', element(2, '$2')).
+unmatched_expr -> unmatched_expr op_expr : build_op(element(1, '$2'), '$1', element(2, '$2')).
+unmatched_expr -> unary_op_eol expr : build_unary_op('$1', '$2').
+unmatched_expr -> at_op_eol expr : build_unary_op('$1', '$2').
+unmatched_expr -> capture_op_eol expr : build_unary_op('$1', '$2').
+unmatched_expr -> block_expr : '$1'.
+
+op_expr -> match_op_eol expr : {'$1', '$2'}.
+op_expr -> add_op_eol expr : {'$1', '$2'}.
+op_expr -> mult_op_eol expr : {'$1', '$2'}.
+op_expr -> hat_op_eol expr : {'$1', '$2'}.
+op_expr -> two_op_eol expr : {'$1', '$2'}.
+op_expr -> and_op_eol expr : {'$1', '$2'}.
+op_expr -> or_op_eol expr : {'$1', '$2'}.
+op_expr -> in_op_eol expr : {'$1', '$2'}.
+op_expr -> in_match_op_eol expr : {'$1', '$2'}.
+op_expr -> type_op_eol expr : {'$1', '$2'}.
+op_expr -> when_op_eol expr : {'$1', '$2'}.
+op_expr -> pipe_op_eol expr : {'$1', '$2'}.
+op_expr -> comp_op_eol expr : {'$1', '$2'}.
+op_expr -> rel_op_eol expr : {'$1', '$2'}.
+op_expr -> arrow_op_eol expr : {'$1', '$2'}.
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								unmatched expression (<code>unmatched_expr</code>) gets its name from the fact that the
+								two operands in a binary expression don't have to be the same type unlike
+								matched expression (<code>matched_expr</code>) where both operands need to be matched
+								expressions (<code>matched_expr</code>).
+							</p>
+							<p>
+								The other important characteristic of unmatched expressions
+								(<code>unmatched_expr</code>) is they can contain block expressions
+								(<code>block_expr</code>).
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-block-expr">
+						<h1>
+							<code>block_expr</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_parser.yrl#L135-L246">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 125%; line-height: 100%">
+block_expr -> parens_call call_args_parens do_block : build_identifier('$1', '$2' ++ '$3').
+block_expr -> parens_call call_args_parens call_args_parens do_block : build_nested_parens('$1', '$2', '$3' ++ '$4').
+block_expr -> dot_do_identifier do_block : build_identifier('$1', '$2').
+block_expr -> dot_identifier call_args_no_parens_all do_block : build_identifier('$1', '$2' ++ '$3').
+
+do_block -> do_eol 'end' : [[{do,nil}]].
+do_block -> do_eol stab end_eol : [[{do, build_stab(reverse('$2'))}]].
+do_block -> do_eol block_list 'end' : [[{do, nil}|'$2']].
+do_block -> do_eol stab_eol block_list 'end' : [[{do, build_stab(reverse('$2'))}|'$3']].
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								Block expressions (<code>block_expr</code>) are what one would expect from the previous
+								part of the grammar and Elixir production code: identifiers or function calls with
+								<code>do</code> block on the end.
+							</p>
+							<p>
+								The <code>do_block</code> contains stabs, which IntelliJ Elixir could already handle, so
+								the only thing new is <code>block_list</code>.
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-block-list">
+						<h1>
+							<code>block_list</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_parser.yrl#L257-L282">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 190%; line-height: 100%">
+block_eol -> block_identifier : '$1'.
+block_eol -> block_identifier eol : '$1'.
+
+block_item -> block_eol stab_eol : {?exprs('$1'), build_stab(reverse('$2'))}.
+block_item -> block_eol : {?exprs('$1'), nil}.
+
+block_list -> block_item : ['$1'].
+block_list -> block_item block_list : ['$1'|'$2'].
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								So, a <code>block_list</code> is a list of <code>block_items</code>, which are
+								block EOLs (<code>block_eol</code>), which are <code>block_identifier</code> and
+								that can be followed by an optional stab.
+							</p>
+							<p>
+								So, what's a <code>block_identifier</code>?
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-block-identifier">
+						<h1>
+							<code>block_identifier</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_tokenizer.erl#L814-L961">
+									<code>lib/elixir/src/elixir_tokenizer.erl</code>
+								</a>
+							</figcaption>
+							<pre><code class="erlang stretch" data-trim style="font-size: 160%; line-height: 100%">
+tokenize_kw_or_other(Rest, Kind, Line, Atom, Tokens) ->
+  case check_keyword(Line, Atom, Tokens) of
+    nomatch ->
+      {identifier, Rest, check_call_identifier(Kind, Line, Atom, Rest)};
+    {ok, [Check|T]} ->
+      {keyword, Rest, Check, T};
+    {error, Token} ->
+      {error, {Line, "syntax error before: ", Token}, atom_to_list(Atom) ++ Rest, Tokens}
+  end.
+
+check_keyword(Line, Atom, Tokens) ->
+  case keyword(Atom) of
+    false    -> nomatch;
+    token    -> {ok, [{Atom, Line}|Tokens]};
+    block    -> {ok, [{block_identifier, Line, Atom}|Tokens]};
+    unary_op -> {ok, [{unary_op, Line, Atom}|Tokens]};
+    Kind     -> {ok, add_token_with_nl({Kind, Line, Atom}, Tokens)}
+  end.
+
+keyword('after')  -> block;
+keyword('else')   -> block;
+keyword('rescue') -> block;
+keyword('catch')  -> block;
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								So, the block identifiers are <code>after</code>, <code>else</code>,
+								<code>rescue</code>, and <code>catch</code>.  This means that those words are real
+								keywords in Elixir.  Due to the power of the macro system, <code>if</code> and
+								<code>unless</code> are just identifiers, but the <code>else</code> in either is a
+								keyword.
+							</p>
+							<p>
+								Using Elixir, we can't define new keywords, we can just rearrange the pre-existing ones.
+								If we want other pseudo-keywords we're left with using keyword list keys.
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-dangling-else-problem">
+						<h1>Dangling Else Problem</h1>
+						<table>
+							<thead>
+							<tr>
+								<th></th>
+								<th></th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<th>Ambiguous code</th>
+								<td>if a then if b then s else s2</td>
+								<td>a b, c do s end</td>
+							</tr>
+							<tr>
+								<th>Bind to Outermost</th>
+								<td>if a then (if b then s) else s2</td>
+								<td>a b, (c) do s end</td>
+							</tr>
+							<tr>
+								<th>Bind to Closest</th>
+								<td>if a then (if b then s else s2)</td>
+								<td>a b, (c do s end)</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								The dangling else problem is a problem with languages like C or Java that have an option
+								else when nesting.
+							</p>
+							<p>
+								The problem can be resolved by either saying the else binds to the outer most if or
+								the closest if.
+							</p>
+							<p>
+								This problem is also possible with do blocks in Elixir when resolving when function call
+								a do block binds to.
+							</p>
+							<p>
+								In actual Elixir grammar, the do block always binds to the outer-most function call,
+								which turns out to be the easy choice for LALR parsers like yecc: it just works.  But,
+								for LL parsers like Grammar Kit, all the text books on compiler design advise to pick
+								binding to the closest because it's just not possible in simple LL(1) parsers to
+								even do bind to outermost.  Thankfully, Grammar Kit is not a simple LL(1) parser, so
+								I was able to find a solution.
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-unmatched-expression">
+						<h1>
+							<code>unmatchedExpression</code>
+						</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.3.5/src/org/elixir_lang/Elixir.bnf#L100-L2274">
+									<code>src/org/elixir_lang/Elixir/bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 110%; line-height: 100%">
+private expression ::= emptyParentheses |
+                       unmatchedExpression |
+                       unqualifiedNoParenthesesManyArgumentsCall
+
+unmatchedExpression ::= unmatchedCaptureNonNumericOperation |
+                        // ...
+                        unmatchedQualifiedNoParenthesesCall |
+                        // ...
+                        unmatchedAccessExpression
+
+unmatchedQualifiedNoParenthesesCall ::= unmatchedExpression dotInfixOperator relativeIdentifier noParenthesesOneArgument doBlock?
+
+noParenthesesOneArgument ::= // ...
+                             !(DUAL_OPERATOR SIGNIFICANT_WHITE_SPACE) matchedExpression
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								When adding unmatched expressions (<code>unmatchedExpression</code>) to Elixir dot bnf
+								(<code>Elixir.bnf</code>), I ended up eliminating matched expressions
+								(<code>matchedExpression</code>) from the list of valid expressions
+								(<code>expression</code>)
+							</p>
+							<p>
+								This is because the important distinction between <code>matchedExpression</code> is that
+								<code>unmatchedExpressions</code> can optionally have a block, but any unparenthesised
+								function call inside an unmatchedExpression function call must be a matchedExpression
+								because blocks always bind to the left-most function call.
+							</p>
+							<p>
+								Both matched expressions and unmatched expressions use no parentheses one argument, but
+								crucially in unmatched expressions, it switches the grammar from looking for unmatched
+								expressions and do blocks to disallowing do blocks.
+							</p>
+							<p>
+								So, while in the yecc grammar, a block expression is matched expression followed by
+								do block, in the grammar kit grammar, a matched expression is an unmatched expression
+								that can't have a block.
+							</p>
+						</aside>
+					</section>
+					<section id="unmatched-expressions-v0.3.5">
+						<h1>v0.3.5</h1>
+						<table style="font-size: 85%">
+							<thead>
+							<tr>
+								<th rowspan="2">Date</th>
+								<th colspan="2">Days</th>
+								<th colspan="2">Commits</th>
+								<th colspan="2">Version</th>
+							</tr>
+							<tr>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Commits/Day</th>
+								<th>Name</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>2015&#8209;07&#8209;08</td>
+								<td>34</td>
+								<td>346</td>
+								<td>83</td>
+								<td>1198</td>
+								<td>2.44</td>
+								<td>0.3.5</td>
+							</tr>
+							</tbody>
+						</table>
+						<ul>
+							<li>
+								<p>Enhancements</p>
+								<ul>
+									<li><code>do</code> blocks (<code>do end</code>)</li>
+									<li>Unmatched expressions (operations involving <code>do</code> block calls and normal matched expressions)</li>
+								</ul>
+							</li>
+							<li>
+								<p>Bug Fixes</p>
+								<ul>
+									<li>Lex full atom instead of just identifier-like operator prefix (<code>:in<nospace>dex</code> before vs <code>:index</code> after)</li>
+									<li><code>!</code> and <code>not</code> are properly wrapped in <code>__block__</code>s when in stab bodies</li>
+								</ul>
+							</li>
+						</ul>
 					</section>
 				</section>
 				<section id="bibliography">
