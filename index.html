@@ -185,6 +185,9 @@
 							<li>
 								<a href="#/significant-whitespace">Significant Whitespace</a>
 							</li>
+							<li>
+								<a href="#/stab">Stab</a>
+							</li>
 						</ul>
 					</section>
 				</section>
@@ -5549,6 +5552,304 @@ matchedUnqualifiedBracketOperation ::= IDENTIFIER CALL bracketArguments
 								</ul>
 							</li>
 						</ul>
+					</section>
+				</section>
+				<section class="stack">
+					<section id="stab">
+						<h1>Stab</h1>
+						<ul>
+							<li>
+								<a href="#/stab-usage">
+									Usage
+								</a>
+							</li>
+							<li>
+								<a href="#/stab-yecc">
+									YECC
+								</a>
+							</li>
+							<li>
+								<a href="#/stab-merging">
+									Merging expressions into clauses
+								</a>
+							</li>
+							<li>
+								<a href="#/stab-grammar-kit">
+									Grammar Kit
+								</a>
+							</li>
+							<li>
+								<a href="#/stab-v0.3.4">
+									v0.3.4
+								</a>
+							</li>
+						</ul>
+					</section>
+					<section id="stab-usage">
+						<h1>Usage</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Code</th>
+								<th>Description</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 300%; line-height: 100%; width: 11em">
+fn x -> x + 1 end
+									</code></pre>
+								</td>
+								<td>Anonymous function clause</td>
+							</tr>
+							<tr>
+								<td style="padding-right: 63px">
+									<pre><code class="elixir stretch" data-trim style="font-size: 300%; line-height: 100%; width: 20em">
+receive do
+  {:ping, pid} -> send pid, :pong
+after
+  10 -> :timeout
+end
+									</code></pre>
+								</td>
+								<td>
+									Do block clauses
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 300%; line-height: 100%">
+try do
+  raise "oops"
+rescue
+  e in Runtimeerror -> e
+end
+									</code></pre>
+								</td>
+								<td>
+									Do block start
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<pre><code class="elixir stretch" data-trim style="font-size: 300%; line-height: 100%; width: 5em">
+(1 + 2)
+									</code></pre>
+								</td>
+								<td>
+									Parenthetical groups
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<aside class="notes">
+							<p>
+								Stabs are the hyphen greater than symbol used to map anonymous function arguments to
+								the function clauses.  They are also used in pattern matching in do blocks, but
+								from the parser's perspective, stabs don't actually need the stab operator.  They
+								can just contain an expression, such as the first part of a try block or even
+								any parenthetical group.  That was weird when I figured that out.
+							</p>
+						</aside>
+					</section>
+					<section id="stab-yecc">
+						<h1>YECC</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_parser.yrl#L205-L276">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 160%; line-height: 100%">
+access_expr -> fn_eol stab end_eol : build_fn('$1', build_stab(reverse('$2'))).
+access_expr -> open_paren stab close_paren : build_stab(reverse('$2')).
+
+stab -> stab_expr : ['$1'].
+stab -> stab eol stab_expr : ['$3'|'$1'].
+
+stab_eol -> stab : '$1'.
+stab_eol -> stab eol : '$1'.
+
+stab_expr -> expr : '$1'.
+stab_expr -> stab_op_eol stab_maybe_expr : build_op('$1', [], '$2').
+stab_expr -> call_args_no_parens_all stab_op_eol stab_maybe_expr :
+               build_op('$2', unwrap_when(unwrap_splice('$1')), '$3').
+stab_expr -> stab_parens_many stab_op_eol stab_maybe_expr :
+               build_op('$2', unwrap_splice('$1'), '$3').
+stab_expr -> stab_parens_many when_op expr stab_op_eol stab_maybe_expr :
+               build_op('$4', [{'when', meta('$2'), unwrap_splice('$1') ++ ['$3']}], '$5').
+
+stab_maybe_expr -> 'expr' : '$1'.
+stab_maybe_expr -> '$empty' : nil.
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								To get a plain parenthetical group, like addition in parentheses, you start with
+								<code>access_expr</code>, then get an open parenthesis.  Dive into stab, then
+								<code>stab_expr</code>.  <code>stab_expr</code> can just be an expression, such
+								as adding <code>1 + 2</code>, so you climb back up to the close parenthesis and
+								you have <code>1 + 2</code> in parentheses and not actual stab operator.
+							</p>
+							<p>
+								The other part of stabs that I couldn't figure out at first was how any anonymous
+								function clause could have more than one line of code in it because expression
+								(<code>expr</code>) and an expression list (<code>expr_list</code>), but there is
+								a pseudo-expression list because the second rule for stab says a stab is stab followed
+								by an E-O-L and a stab_expr, so that can just recursively add more eol expressions
+								on the right.
+							</p>
+							<p>
+								But, that still leaves the problem that all the expressions in a row aren't actually
+								associated with the pattern or argument names before the stab operator.
+							</p>
+						</aside>
+					</section>
+					<section id="stab-merging">
+						<h1>Merging expressions into clauses</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/elixir-lang/elixir/blob/v0.15.1/lib/elixir/src/elixir_parser.yrl#L679-L694">
+									<code>lib/elixir/src/elixir_parser.yrl</code>
+								</a>
+							</figcaption>
+							<pre><code class="erlang stretch" data-trim style="font-size: 210%; line-height: 100%">
+build_stab([{'->', Meta, [Left, Right]}|T]) ->
+  build_stab(Meta, T, Left, [Right], []);
+
+build_stab(Else) ->
+  build_block(Else).
+
+build_stab(Old, [{'->', New, [Left, Right]}|T], Marker, Temp, Acc) ->
+  H = {'->', Old, [Marker, build_block(reverse(Temp))]},
+  build_stab(New, T, Left, [Right], [H|Acc]);
+
+build_stab(Meta, [H|T], Marker, Temp, Acc) ->
+  build_stab(Meta, T, Marker, [H|Temp], Acc);
+
+build_stab(Meta, [], Marker, Temp, Acc) ->
+  H = {'->', Meta, [Marker, build_block(reverse(Temp))]},
+  reverse([H|Acc]).
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								So, this is where the YECC grammar is a little sneaky: it doesn't actually build up
+								the parse tree a function clause at a time, instead the stab operation and plain
+								expressions are all siblings and instead the Erlang <code>build_stab</code> function
+								called in access expression (<code>access_expr</code>) actually merges all adjacent
+								expressions into children of the prior stab operation until the next stab operation is
+								hit.
+							</p>
+						</aside>
+					</section>
+					<section id="stab-grammar-kit">
+						<h1>Grammar Kit</h1>
+						<figure>
+							<figcaption>
+								<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.3.4/src/org/elixir_lang/Elixir.bnf#L1648-L1770">
+									<code>src/org/elixir_lang/Elixir.bnf</code>
+								</a>
+							</figcaption>
+							<pre><code class="stretch" data-trim style="font-size: 175%; line-height: 100%">
+stabNoParenthesesSignature ::= noParenthesesArguments
+
+stabParenthesesSignature ::= parenthesesArguments (whenInfixOperator expression)?
+stabSignature ::= (stabParenthesesSignature |
+                   stabNoParenthesesSignature)?
+
+stabInfixOperator ::= EOL* STAB_OPERATOR EOL*
+
+private stabOperationPrefix ::= stabSignature stabInfixOperator
+private stabBodyExpression ::= !stabOperationPrefix expression
+stabBody ::= stabBodyExpression (endOfExpression+ stabBodyExpression)*
+
+stabOperation ::= stabOperationPrefix stabBody?
+                  { implements = "org.elixir_lang.psi.Quotable" methods = [quote] }
+
+stab ::= stabOperation (endOfExpression stabOperation)* |
+         stabBody
+
+anonymousFunction ::= FN endOfExpression?
+                      stab
+                      endOfExpression* END
+
+parentheticalStab ::= OPENING_PARENTHESIS EOL*
+                      (infixSemicolon? stab infixSemicolon? | infixSemicolon)
+                      EOL* CLOSING_PARENTHESIS
+
+accessExpression ::= anonymousFunction |
+                     parentheticalStab
+							</code></pre>
+						</figure>
+						<aside class="notes">
+							<p>
+								Like, I said, I thought that was a dirty trick to not have the grammar actually represent
+								the AST directly, so I made IntellIJ Elixir's stab definition match the clauses directly
+								and not do merge in Java.
+							</p>
+							<p>
+								The key to making this work is the negative look-ahead in stab body expression
+								(<code>stabBodyExpression</code>), which prevent the start of a new stab clause from
+								being included in the body of the previous stab.
+							</p>
+							<p>
+								This look-ahead is more expensive in terms of parse time because the look-ahead includes
+								stab signature (<code>stabSignature</code>), which can be any matched expression, which
+								can be quite large, but in real world Elixir code, the function clause arguments
+								and bodies should be small enough that this backtracking isn't an issue.
+							</p>
+						</aside>
+					</section>
+					<section id="stab-v0.3.4">
+						<h1>v0.3.4</h1>
+						<table>
+							<thead>
+							<tr>
+								<th rowspan="2">Date</th>
+								<th colspan="2">Days</th>
+								<th colspan="2">Commits</th>
+								<th>Version</th>
+							</tr>
+							<tr>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Delta</th>
+								<th>Total</th>
+								<th>Commits/Day</th>
+							</tr>
+							</thead>
+							<tbody>
+							<tr>
+								<td>2015&#8209;06&#8209;04</td>
+								<td>20</td>
+								<td>312</td>
+								<td>86</td>
+								<td>1115</td>
+								<td>4.30</td>
+							</tr>
+							</tbody>
+						</table>
+						<ul>
+							<li>
+								<p>Enhancements</p>
+								<ul>
+									<li>Bracket at expression (<code>@foo[key]</code>)</li>
+									<li>Anonymous functions (<code>fn end</code>), stab clauses (<code>-&gt;</code>), and parentheticals (<code>1 + 2</code>)</li>
+									<li>Maps (<code>%{}</code>) and structs (<code>%User{}</code>)</li>
+									<li>Tuples (<code>{}</code>)</li>
+									<li>Bit Strings (<code>&lt;&lt;&gt;&gt;</code>)</li>
+								</ul>
+							</li>
+						</ul>
+						<aside class="notes">
+							<p>
+								In addition to the anonymous functions, stab clauses, and parentheticals enabled by stabs,
+								version zero dot three dot four (<code>v0.3.4</code>) also included support for
+								the map, struct, tuples and bit string container types.
+							</p>
+						</aside>
 					</section>
 				</section>
 				<section id="bibliography">
