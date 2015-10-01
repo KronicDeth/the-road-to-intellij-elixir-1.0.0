@@ -164,17 +164,10 @@
 								<a href="#/matched-expressions">Matched Expressions</a>
 							</li>
 							<li>
-								<ul>
-									<li>
-										<a href="#/no-parentheses-function-calls">No Parentheses Function Calls</a>
-									</li>
-									<li>
-										<a href="#/jinterface">JInterface</a>
-									</li>
-									<li>
-										<a href="#/v0.2.1">v0.2.1</a>
-									</li>
-								</ul>
+								<a href="#/no-parentheses-function-calls">No Parentheses Function Calls</a>
+							</li>
+							<li>
+								<a href="#/jinterface">JInterface</a>
 							</li>
 							<li>
 								<a href="#/significant-whitespace">Significant Whitespace</a>
@@ -642,9 +635,6 @@ private expressionList ::= expression (endOfExpression expression | adjacentExpr
                             <li>
                                 <a href="#/syntax-ignored">Ignoring Characters</a>
                             </li>
-							<li>
-								<a href="#/syntax-v0.0.2">v0.0.2</a>
-							</li>
 						</ul>
 					</section>
 					<section id="syntax-analysis">
@@ -864,60 +854,6 @@ strip_horizontal_space(T) ->
                             </p>
 						</aside>
 					</section>
-					<section id="syntax-v0.0.2">
-                        <h1>v0.0.2</h1>
-                        <table>
-							<thead>
-							<tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th>Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-							</tr>
-							</thead>
-							<tbody>
-                            <tr>
-								<td>2014&#8209;08&#8209;03</td>
-								<td>1</td>
-								<td>7</td>
-								<td>14</td>
-								<td>33</td>
-								<td>14.00</td>
-							</tr>
-                            </tbody>
-                        </table>
-                        <ul>
-                            <li>
-                                <p>Enhancements</p>
-                                <ul>
-                                    <li>Comments</li>
-                                    <li>Binary numbers</li>
-                                    <li>Hexadecimal numbers</li>
-                                    <li>Octal numbers</li>
-                                </ul>
-                            </li>
-                            <li>
-                                <p>Bug Fixes</p>
-                                <ul>
-                                    <li>Parser no longer freezes</li>
-                                </ul>
-                            </li>
-                        </ul>
-                        <aside class="notes">
-                            <p>
-                                With version oh dot oh dot two (<code>v0.0.2</code>), IntelliJ Elixir no longer froze
-                                the IDE, but I could only parse Comments or base integers, but I had started to under
-                                how to generate a lexer properly using JFlex.
-                            </p>
-                        </aside>
-                    </section>
 				</section>
                 <section class="stack">
                     <section id="interpolation">
@@ -934,9 +870,6 @@ strip_horizontal_space(T) ->
                             </li>
                             <li>
                                 <a href="#/interpolation-jflex">JFlex</a>
-                            </li>
-                            <li>
-                                <a href="#/interpolation-v0.0.3">v0.0.3</a>
                             </li>
                         </ul>
                     </section>
@@ -1165,58 +1098,6 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
                             </p>
 						</aside>
 					</section>
-                    <section id="interpolation-v0.0.3">
-                        <h1>v0.0.3</h1>
-                        <table style="font-size: 85%">
-							<thead>
-							<tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th>Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-							</tr>
-							</thead>
-							<tbody>
-                            <tr>
-								<td>2014&#8209;08&#8209;08</td>
-								<td>5</td>
-								<td>12</td>
-								<td>10</td>
-								<td>43</td>
-								<td>2.00</td>
-							</tr>
-                            </tbody>
-                        </table>
-                        <ul>
-                            <li>
-                                <p>Enhancements</p>
-                                <ul>
-                                    <li>Char Lists</li>
-                                    <li>
-                                        <p>Strings</p>
-                                        <ul>
-                                            <li>Interpolation</li>
-                                            <li>Escaped <code>#</code></li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                        <aside class="notes">
-                            <p>
-                                In 5 days I was able to figure out how to convert the JFlex finite automaton
-                                to a pushdown automaton by following the formal definition that pushdown automaton
-                                just is a finite automaton with a stack that it can consult for transition logic.
-                            </p>
-                        </aside>
-                    </section>
                 </section>
 				<section class="stack">
                     <section id="matched-expressions">
@@ -1253,9 +1134,6 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
 							</li>
 							<li>
 								<a href="#/matched-expressions-associativity">Associativity</a>
-							</li>
-							<li>
-								<a href="#/matched-expressions-v0.2.0">v0.2.0</a>
 							</li>
                         </ul>
                     </section>
@@ -1976,172 +1854,7 @@ public class ElixirParser implements PsiParser {
 							</p>
 						</aside>
 					</section>
-                    <section id="matched-expressions-v0.2.0">
-                        <h1>v0.1.0 - v0.2.0</h1>
-                        <table>
-                            <thead>
-                            <tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th>Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-							</tr>
-                            </thead>
-                            <tbody>
-							<tr>
-								<td>2014&#8209;09&#8209;13</td>
-								<td>36</td>
-								<td>48</td>
-								<td>64</td>
-								<td>107</td>
-								<td>1.78</td>
-							</tr>
-							<tr>
-								<td>2014&#8209;09&#8209;13</td>
-								<td>5</td>
-								<td>60</td>
-								<td>12</td>
-								<td>123</td>
-								<td>2.50</td>
-							</tr>
-                            <tr>
-                                <td>2014&#8209;11&#8209;30</td>
-								<td>66</td>
-								<td>126</td>
-								<td>250</td>
-								<td>373</td>
-								<td>3.79</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        <ul style="font-size: 35%">
-                            <li>
-                                <p>Enhancements</p>
-                                <ul>
-									<li>
-                                        Literal and interpolated sigils with highlighting
-                                        <ul>
-                                            <li>Char List Sigils (<code>~c</code> and <code>~C</code>) highlighted as 'Char List' in Settings.</li>
-                                            <li>
-                                                Regex Sigils (<code>~r</code> and <code>~R</code>) highlighted as 'Sigil' in Settings.
-                                                <strong>NOTE: RegExp syntax is not internally highlighted yet</strong>
-                                            </li>
-                                            <li>String Sigils (<code>~s</code> and <code>~S</code> highlighted as 'String' in Settings.</li>
-                                            <li>Word Sigils (<code>~w</code> and <code>~W</code> highlighted as 'Sigil' in Settings.</li>
-                                            <li>Custom Sigils highlighted as 'Sigil' in Settings.</li>
-                                            <li>Modifiers are highlighted on Regex, Word, and Custom while modifiers aren't allowed on CharList and String Sigils.</li>
-                                        </ul>
-									</li>
-									<li>
-                                        <p>Atoms with highlighting</p>
-                                        <ul>
-                                            <li>
-                                                Atom with double or single quotes to allow interpolation.  Double quotes are highlighted as 'String'
-                                                while single quotes are highlighted as 'Char List'.  This may be changed in the future.
-                                            </li>
-                                            <li>Literal atoms highlighted as 'Atom'.</li>
-                                            <li>Operator atoms highlighted as 'Atom'.</li>
-                                        </ul>
-                                    </li>
-                                    <li>All valid escape sequences (<code>\&lt;character&gt;</code>, <code>\x&lt;hexadecimal&gt;</code>, <code>\x{&lt;hexadecimal&gt;}</code>,) are recognized.</li>
-                                    <li>Support for creation of Elixir modules</li>
-                                    <li>Use pygments' elixir_example.ex supplied by Alexei Sholik for Color Settings Page.<li>
-                                    <li><code>?</code> before any character or valid escape sequence will be recognized as a character token.</li>
-                                    <li><code>;</code> is recognized as EOL. <code>\r\n</code> and <code>\n</code> style EOL can be escaped with <code>\</code> and will be treated as whitespace.</li>
-                                    <li>Operator arity, associativity, and precedence</li>
-                                    <li>Decimal integers and floats</li>
-                                    <li>Identifiers (variable, function, and macro names)</li>
-                                    <li><code>...</code> identifier</li>
-                                    <li>Aliases (module names)</li>
-                                    <li>Keyword Identifiers</li>
-                                    <li>Empty Parentheses</li>
-                                    <li>In Operator</li>
-                                    <li>Dot Operator</li>
-                                    <li>Keyword Lists</li>
-                                    <li>Matched Expressions</li>
-                                    <li>Regular Keywords (<code>end</code>, <code>false</code>, <code>fn</code>, <code>nil</code>, and <code>true</code>)
-                                    <li>
-                                        <p>New attributes for parts of numbers on Color Settings Page</p>
-                                        <ul>
-                                            <li>Binary, Decimal, Hexadecimal, and Octal Digits</li>
-                                            <li>Decimal Exponent, Mark, and Separator</li>
-                                            <li>
-                                                <p>Invalid Binary, Decimal, Hexadecimal, and Octal Digits</p>
-                                                <ul>
-                                                    <li>2-9, A-Z, and a-z will be parsed as invalid binary digits</li>
-                                                    <li>8-9, A-Z, and a-z will be parsed as invalid octal digits</li>
-                                                    <li>G-Z and g-z will be parsed as invalid hexadecimal digits</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <p>Non-Decimal Base Prefix</p>
-                                                <ul>
-                                                    <li>Any letter other than b, o, or x, in either case, will be recognized as an invalid whole number base</li>
-                                                </ul>
-                                            </li>
-                                            <li>Obsolete Non-Decimal Base Prefix (<code>B</code> for binary and <code>X</code> for hexadecimal)</li>
-                                        </ul>
-                                    </li>
-                                    <li>Any digit, 0-9, A-Z, or a-z will be parsed as invalid for invalid whole number based numbers</li>
-                                    <li>Recovery for non-decimal whole numbers if the prefix is given, but no digits are given</li>
-
-                                </ul>
-                            </li>
-                            <li>
-                                <p>Bug Fixes</p>
-                                <ul>
-									<li>Single-quoted strings are correctly referred to as 'Character List' now instead of 'String' in Settings.</li>
-                                    <li>Double-quoted strings are correctly referred to as 'String' now instead of 'Interpolated String' in Settings.</li>
-                                    <li>Non-Heredoc CharLists and Strings can be multiline.</li>
-                                    <li>CharLists and Strings support interpolation and escape sequences.</li>
-									<li>Blank lines are properly parsed as whitespace instead of bad characters.</li>
-									<li>EOL is parsed as bad character in sigil name (after `~`) instead of causing the lexer to fail to match, which raised exceptions in Event Log.</li>
-                                    <li>Sigil terminator escapes are recognized, so that sigils are no longer prematurely terminated.</li>
-                                    <li>Comments do not consume EOL, so trailing comments don't cause error parsing expression on following line.</li>
-                                    <li>Sigil modifiers now work on groups in addition to heredocs.</li>
-                                    <li><code>;</code> is separate from <code>EOL</code> and either or both can separate expressions, but only <code>EOL</code> can separate operators and operands for operations</li>
-                                </ul>
-                            </li>
-                            <li>
-                                <p>Incompatible Changes</p>
-                                <ul>
-                                    <li>Recovery for non-decimal whole numbers if the prefix is given, but no digits are given</li>
-                                </ul>
-                            </li>
-                            <aside class="notes">
-								<p>
-									v0.1.0 included some bug fixes where my Ruby brain had leaked into what was allowed
-									in single and double quotes in Elixir along with support for singles, which expanded
-									the stack system to support tracking the promoter and terminator for the current
-									sigil.
-								</p>
-								<p>
-									v0.1.2 included support for atoms.
-								</p>
-                                <p>
-                                    v0.1.4 wasn't released, so the next release, v0.2.0 didn't come until one third of
-									the way through the first year of the project, on day 126.
-                                </p>
-                                <p>
-                                    It contained a plethora of changes and was the first time useful code, such as
-                                    mathematical operations could be recognized by the parser.
-                                </p>
-								<p>
-									But, as you can gather from the previous slides a lot of that time was me learning
-									the difference between YECC's LALR and Grammar Kit's Parsing Expression Grammar
-									with Pratt Parsing.
-								</p>
-                            </aside>
-                        </ul>
-                    </section>
-                </section>
+				</section>
 				<section class="stack">
 					<section id="no-parentheses-function-calls">
 						<h1>No Parentheses Function Calls</h1>
@@ -3631,72 +3344,6 @@ public class OtpExternal {
 						</aside>
 					</section>
 				</section>
-				<section id="v0.2.1">
-					<h1>v0.2.1</h1>
-					<table>
-						<thead>
-						<tr>
-							<th rowspan="2">Date</th>
-							<th colspan="2">Days</th>
-							<th colspan="2">Commits</th>
-							<th>Version</th>
-						</tr>
-						<tr>
-							<th>Delta</th>
-							<th>Total</th>
-							<th>Delta</th>
-							<th>Total</th>
-							<th>Commits/Day</th>
-						</tr>
-						</thead>
-						<tbody>
-						<tr>
-							<td>2015&#8209;04&#8209;03</td>
-							<td>124</td>
-							<td>250</td>
-							<td>521</td>
-							<td>894</td>
-							<td>4.20</td>
-						</tr>
-						</tbody>
-					</table>
-					<ul>
-						<li>
-							<p>Enhancements</p>
-							<ul>
-								<li>
-									No parentheses function calls can occur as the right operand in binary infix operations or the sole
-									operand of unary prefix operation.
-								</li>
-								<li>
-									Function calls with neither parentheses nor <code>do</code> blocks that have at least 2 arguments: a
-									positional argument and keyword arguments or 2 or more positional argument(s) followed by optional keyword
-									arguments.
-								</li>
-								<li>Inspection that marks errors for ambiguous commas</li>
-								<li>Inspection that marks errors for ambiguous parentheses</li>
-								<li>Quick Fix for the ambiguous parentheses to remove the space between the function name and the opening parentheses.</li>
-								<li>Inspection that marks errors for missing end-of-expressions (`;` and newlines) between expressions.</li>
-								<li>Quick Fix to insert `;` for missing end-of-expression.</li>
-								<li>Quick Fix to insert newline for missing end-of-expression.</li>
-							</ul>
-						</li>
-						<li>
-							<p>Bug Fixes</p>
-							<ul>
-								<li>Right hand-side of dot_alias and dot_identifier was translated incorrectly. Only Aliases and Identifiers are allowed now.</li>
-							</ul>
-						</li>
-					</ul>
-					<aside class="notes">
-						<p>
-							The gap between version zero dot two dot zero (<code>v0.2.0</code>) and version zero
-							dot two dot one (<code>v0.2.1</code>) was 124 days, but involved 521 commits.  The release
-							included not only no parentheses function calls, but also a better way to automate testing
-							using JInterface.
-						</p>
-					</aside>
-				</section>
 				<section class="stack">
 					<section id="significant-whitespace">
 						<h1>Significant Whitespace</h1>
@@ -3734,11 +3381,6 @@ public class OtpExternal {
 							<li>
 								<a href="#/significant-whitespace-operations">
 									Operations
-								</a>
-							</li>
-							<li>
-								<a href="#/significant-whitespace-v0.3.3">
-									v0.3.3
 								</a>
 							</li>
 						</ul>
@@ -4246,121 +3888,6 @@ matchedUnqualifiedBracketOperation ::= IDENTIFIER CALL bracketArguments
 							</p>
 						</aside>
 					</section>
-					<section id="significant-whitespace-v0.3.3">
-						<h1>v0.3.0 through v0.3.3</h1>
-						<table style="font-size: 85%">
-							<thead>
-							<tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th>Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-							</tr>
-							</thead>
-							<tbody>
-							<tr>
-								<td>2015&#8209;05&#8209;15</td>
-								<td>42</td>
-								<td>292</td>
-								<td>135</td>
-								<td>1029</td>
-								<td>3.21</td>
-							</tr>
-							</tbody>
-						</table>
-						<ul style="font-size: 55%">
-							<li>
-								<p>Enhancements</p>
-								<ul>
-									<li>
-										<code>\x</code> is marked an error in CharLists, CharList Heredocs, Strings, and String Heredocs, but not
-										in any sigils.
-									</li>
-									<li>
-										New Elixir File will automatically underscore the camel case module name when creating the file name and
-										will convert qualifying aliases before the last <code>.</code> to directories.
-									</li>
-									<li>
-										File &gt; New &gt; Project From Existing Sources can be used in IntelliJ to setup the excludes, sources, tests,
-										SDK and libraries for an Elixir project that has already been created with <code>mix new</code>.
-									</li>
-									<li>
-										Operators can be qualified function names.
-									</li>
-									<li>
-										Anonymous function calls (<code>.(...)</code>)
-									</li>
-									<li>
-										Inspection that marks errors when keywords aren't at end of list.
-									</li>
-									<li>
-										<p>Remote function calls (<code>Alias.function</code>, <code>:atom.function</code>, etc) and local function calls (<code>function</code>) with...</p>
-										<ul>
-											<li>
-												<p>No Parentheses with...</p>
-												<ul>
-													<li>No Arguments (<code>Alias.function</code>)</li>
-													<li>Keywords (<code>Alias.function key: value</code>)</li>
-													<li>
-														Nested No Parentheses Call (<code>Alias.function Inner.function positional, key: value</code>)
-													</li>
-													<li>Positional and Keyword arguments (<code>Alias.function positional, key: value</code>)</li>
-													<li>Matched Expression (<code>Alias.function 1 + 2</code>)</li>
-												</ul>
-											</li>
-											<li>
-												<p>Parentheses with...</p>
-												<ul>
-													<li>No arguments (<code>Alias.function()</code>)</li>
-													<li>No Parentheses Call (<code>Alias.function(Inner.function positional, key: value</code>)</li>
-													<li>Keywords (<code>Alias.function(key: value)</code>)</li>
-													<li>Positional and Keyword arguments (<code>Alias.function(positional, key: value)</code>)</li>
-													<li>Trailing parentheses for quoting (<code>def unquote(variable)(positional)</code>)</li>
-												</ul>
-											</li>
-										</ul>
-									</li>
-									<li>Bracket expressions (<code>foo[key]</code>)</li>
-								</ul>
-							</li>
-							<li>
-								<p>Bug Fixes</p>
-								<ul>
-									<li>
-										Fix
-										<code>
-											NoSuchElementException
-										</code>
-										when no suggested SDK home paths are available.  Thanks to
-										<a href="https://github.com/zyuyou">
-											zyuyou
-										</a>
-										for
-										<a href="https://github.com/KronicDeth/intellij-elixir/issues/120">
-											reporting
-										</a>
-									</li>
-								</ul>
-							</li>
-							<li>
-								<p>Incompatible Changes</p>
-								<ul>
-									<li>
-										New Elixir File validates that the name is a valid Alias, so each `.` separated part must start with a
-										capital letter.  Previous New Elixir File validated that the name was a valid path, and so forced the name
-										to be lowercase.
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</section>
 				</section>
 				<section class="stack">
 					<section id="stab">
@@ -4384,11 +3911,6 @@ matchedUnqualifiedBracketOperation ::= IDENTIFIER CALL bracketArguments
 							<li>
 								<a href="#/stab-grammar-kit">
 									Grammar Kit
-								</a>
-							</li>
-							<li>
-								<a href="#/stab-v0.3.4">
-									v0.3.4
 								</a>
 							</li>
 						</ul>
@@ -4610,55 +4132,6 @@ accessExpression ::= anonymousFunction |
 							</p>
 						</aside>
 					</section>
-					<section id="stab-v0.3.4">
-						<h1>v0.3.4</h1>
-						<table>
-							<thead>
-							<tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th>Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-							</tr>
-							</thead>
-							<tbody>
-							<tr>
-								<td>2015&#8209;06&#8209;04</td>
-								<td>20</td>
-								<td>312</td>
-								<td>86</td>
-								<td>1115</td>
-								<td>4.30</td>
-							</tr>
-							</tbody>
-						</table>
-						<ul>
-							<li>
-								<p>Enhancements</p>
-								<ul>
-									<li>Bracket at expression (<code>@foo[key]</code>)</li>
-									<li>Anonymous functions (<code>fn end</code>), stab clauses (<code>-&gt;</code>), and parentheticals (<code>1 + 2</code>)</li>
-									<li>Maps (<code>%{}</code>) and structs (<code>%User{}</code>)</li>
-									<li>Tuples (<code>{}</code>)</li>
-									<li>Bit Strings (<code>&lt;&lt;&gt;&gt;</code>)</li>
-								</ul>
-							</li>
-						</ul>
-						<aside class="notes">
-							<p>
-								In addition to the anonymous functions, stab clauses, and parentheticals enabled by stabs,
-								version zero dot three dot four (<code>v0.3.4</code>) also included support for
-								the map, struct, tuples and bit string container types.
-							</p>
-						</aside>
-					</section>
 				</section>
 				<section class="stack">
 					<section id="unmatched-expressions">
@@ -4692,11 +4165,6 @@ accessExpression ::= anonymousFunction |
 							<li>
 								<a href="#/unmatched-expressions-unmatched-expression">
 									<code>unmatchedExpression</code>
-								</a>
-							</li>
-							<li>
-								<a href="#/unmatched-expressions-v0.3.5">
-									v0.3.5
 								</a>
 							</li>
 						</ul>
@@ -4970,54 +4438,6 @@ noParenthesesOneArgument ::= // ...
 								that can't have a block.
 							</p>
 						</aside>
-					</section>
-					<section id="unmatched-expressions-v0.3.5">
-						<h1>v0.3.5</h1>
-						<table>
-							<thead>
-							<tr>
-								<th rowspan="2">Date</th>
-								<th colspan="2">Days</th>
-								<th colspan="2">Commits</th>
-								<th colspan="2">Version</th>
-							</tr>
-							<tr>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Delta</th>
-								<th>Total</th>
-								<th>Commits/Day</th>
-								<th>Name</th>
-							</tr>
-							</thead>
-							<tbody>
-							<tr>
-								<td>2015&#8209;07&#8209;08</td>
-								<td>34</td>
-								<td>346</td>
-								<td>83</td>
-								<td>1198</td>
-								<td>2.44</td>
-								<td>0.3.5</td>
-							</tr>
-							</tbody>
-						</table>
-						<ul>
-							<li>
-								<p>Enhancements</p>
-								<ul>
-									<li><code>do</code> blocks (<code>do end</code>)</li>
-									<li>Unmatched expressions (operations involving <code>do</code> block calls and normal matched expressions)</li>
-								</ul>
-							</li>
-							<li>
-								<p>Bug Fixes</p>
-								<ul>
-									<li>Lex full atom instead of just identifier-like operator prefix (<code>:in<nospace>dex</code> before vs <code>:index</code> after)</li>
-									<li><code>!</code> and <code>not</code> are properly wrapped in <code>__block__</code>s when in stab bodies</li>
-								</ul>
-							</li>
-						</ul>
 					</section>
 				</section>
 				<section class="stack">
