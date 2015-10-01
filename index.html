@@ -3492,16 +3492,16 @@ Module. # a comment
 							</a>
 						</h1>
 						<table>
-							<thead>
 							<tr>
-								<th>Before</th>
-								<th>Affer</th>
+								<th>Time</th>
+								<th>Code</th>
 							</tr>
 							</thead>
 							<tbody>
 							<tr>
+								<td>Before</td>
 								<td>
-									<pre><code class="erlang stretch" data-trim style="width: 45em">
+									<pre><code class="erlang stretch" data-trim style="font-size: 185%; line-height: 100%; width: 45em">
 tokenize([$.|T], Line, Column, Scope, Tokens) ->
   {Rest, Counter, Offset} = strip_space(T, 0, Column + 1),
   handle_dot([$.|Rest], Line + Counter, Offset - 1, Column, Scope, Tokens);
@@ -3514,8 +3514,13 @@ strip_space(T, Counter, Column) ->
   end.
 									</code></pre>
 								</td>
+							</tr>
+							<tr>
 								<td>
-									<pre><code class="erlang stretch" data-trim style="width: 48em">
+									After
+								</td>
+								<td>
+									<pre><code class="erlang stretch" data-trim style="font-size: 185%; line-height: 100%; width: 48em">
 tokenize([$.|T], Line, Column, Scope, Tokens) ->
   {Rest, Counter, Offset} = strip_dot_space(T, 0, Column + 1),
   handle_dot([$.|Rest], Line + Counter, Offset - 1, Column, Scope, Tokens);
