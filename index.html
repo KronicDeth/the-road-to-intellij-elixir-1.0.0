@@ -1146,6 +1146,7 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
                                     <code>Elixir.bnf</code>
                                 </th>
                                 <th>Description</th>
+								<th>Example</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -1163,6 +1164,19 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
                                 <td>
                                     With Parentheses*
                                 </td>
+								<td>
+									<ul>
+										<li>
+											<code>function()</code>
+										</li>
+										<li>
+											<code>function</code>
+										</li>
+										<li>
+											<code>function&nbspone</code>
+										</li>
+									</ul>
+								</td>
                             </tr>
                             <tr>
                                 <td>
@@ -1178,6 +1192,16 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
                                 <td>
                                     Without Parentheses
                                 </td>
+								<td>
+									<ul>
+										<li>
+											<code>function&nbsp;one, two</code>
+										</li>
+										<li>
+											<code>function&nbsp;one, key: value</code>
+										</li>
+									</ul>
+								</td>
                             </tr>
                             <tr>
                                 <td>
@@ -1193,6 +1217,16 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
                                 <td>
                                     With Do Block
                                 </td>
+								<td>
+									<ul>
+										<li>
+											<code>function() do end</code>
+										</li>
+										<li>
+											<code>function one, two do end</code>
+										</li>
+									</ul>
+								</td>
                             </tr>
                             </tbody>
                         </table>
