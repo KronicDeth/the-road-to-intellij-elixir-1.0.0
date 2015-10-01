@@ -939,9 +939,6 @@ strip_horizontal_space(T) ->
                                 <a href="#/interpolation-elixir-native">Elixir Native</a>
                             </li>
                             <li>
-                                <a href="#/interpolation-nesting-limit">Nesting Limit</a>
-                            </li>
-                            <li>
                                 <a href="#/interpolation-jflex">JFlex</a>
                             </li>
                             <li>
@@ -1105,39 +1102,12 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
 						</figure>
 						<aside class="notes">
 							<p>
-								In native Elixir, elixir tokenizer colon tokenize slash four
-								(<code>elixir_tokenizer:tokenize/4</code>) calls handle strings slash 5
-								(<code>handle_strings/5</code>, which calls elixir interpolation colon
-								extract, which calls elixir tokenizer colon tokenizer slash 3
-								(<code>elixir_tokenizer:tokenize/3</code>), which calls slash 4, meaning the native
+								In native Elixir, elixir tokenizer's tokenize
+								(<code>elixir_tokenizer:tokenize/4</code>) calls handle strings
+								(<code>handle_strings/5</code>, which calls elixir interpolation's
+								extract, which calls elixir tokenizer's colon tokenize
+								(<code>elixir_tokenizer:tokenize</code>), meaning the native
 								lexer uses normal Erlang recursion.
-							</p>
-							<p>
-								Note: the recursive call to tokenize is an argument to case, so
-								interpolation handling is not tail-recursive so if you got cheeky you could blow the
-								stack with enough levels of nested interpolation.
-							</p>
-						</aside>
-					</section>
-					<section id="interpolation-nesting-limit">
-						<h1>Interpolation Nesting Limit</h1>
-						<pre><code class="elixir stretch" data-trim style="font-size: 160%; line-height: 100%;">
-levels = 10_000_000
-open = Stream.repeatedly(fn -> ~S|" #{| end) |>
-       Enum.take(levels) |>
-       Enum.join; nil
-close = Stream.repeatedly(fn -> ~S|} "| end) |>
-        Enum.take(levels) |>
-        Enum.join; nil
-:ok = "#{open}#{close}" |>
-      String.to_char_list |>
-      :elixir_tokenizer.tokenize(0, []) |>
-      elem(0)
-						</code></pre>
-						<aside class="notes">
-							<p>
-								That being said, although 10 million levels of nesting took a long time to run and ate
-                                all my memory, I wasn't able to actually hit a stack limit on my Mac Book Pro.
 							</p>
 						</aside>
 					</section>
@@ -1188,10 +1158,6 @@ close = Stream.repeatedly(fn -> ~S|} "| end) |>
 								generated parser so it was a pushdown automaton?  I added a manually managed stack
 								in the Java code that I can run on each rule match.
 							</p>
-                            <p>
-                                The Java code at the top in percent curly braces is injected directly into the generated
-                                parser.  It sets up an integer stack to track the current lexical state.
-                            </p>
                             <p>
                                 If the lexer hits a non-escaped double quote, it enters the
                                 <code>DOUBLE_QUOTED_STRING</code> state, which treats the hash curly brace
