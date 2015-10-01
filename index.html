@@ -1847,9 +1847,6 @@ public class ElixirParser implements PsiParser {
 								<a href="#/no-parentheses-function-calls-conversion">Conversion</a>
 							</li>
 							<li>
-								<a href="#/no-parentheses-function-calls-maybe-qualified">Maybe Qualified</a>
-							</li>
-							<li>
 								<a href="#/no-parentheses-function-calls-unqualified">Unqualified</a>
 							</li>
 							<li>
@@ -1982,70 +1979,6 @@ no_parens_expr ::= (matched_expr dot_op)? identifier call_args_no_parens_many_st
 								only works if a rule is used as a direct operand and matched expression
 								(<code>matched_expr</code>) needs to be indirect to allow both qualified and
 								unqualified no parentheses calls.
-							</p>
-						</aside>
-					</section>
-					<section id="no-parentheses-function-calls-maybe-qualified">
-						<h1>Maybe Qualified</h1>
-						<figure>
-							<figcaption>
-								<a href="https://github.com/KronicDeth/intellij-elixir/blob/834aad640ccf80573ce5aab6964dedd97de804b7/src/org/elixir_lang/Elixir.bnf#L110-L296">
-									<code>src/org/elixir_lang/Elixir.bnf</code>
-								</a>
-							</figcaption>
-							<pre><code class="stretch" data-trim style="font-size: 120%; line-height: 100%">
-/* Cannot use `(matchedExpressionDotIdentifier | identifierExpression)` as matchedExpression will be used in place of
-   matchedExpressionDotIdentifier in generated parser. I'm not sure, but it may be due to matchedExpression being the
-   expression root of matchedExpressionDotIdentifier */
-/* Cannot use `(matchedExpression EOL* DOT_OPERATOR EOL*)? IDENTIFIER` because unlike in matchedExpression, this pattern
-   from matchedExpressionDotIdentifier will have the first matchedExpression parse as a matchedExpressionDotIdentifier
-   because calling into matchedExpression does not handle the precedence starting point correctly. */
-/* no EOL* before callArgumentsNoParenthesesManyStrict as first argument must be on same line so that function isn't
-   interpreted as taking no arguments. */
-noParenthesesExpression ::= noParenthesesMaybeQualifiedIdentifier callArgumentsNoParenthesesManyStrict
-
-noParenthesesMaybeQualifiedIdentifier ::= noParenthesesQualifier* IDENTIFIER
-noParenthesesQualifier ::= noParenthesesQualifierHead noParenthesesQualifierTail*
-private noParenthesesQualifierHead ::= (
-                                noParenthesesQualifierAtOperation |
-                                noParenthesesQualifierNumberCaptureOperation |
-                                noParenthesesQualifierNumberUnaryOperation |
-                                noParenthesesQualifierNumberAtOperation |
-                                OPENING_PARENTHESIS EOL* SEMICOLON EOL* CLOSING_PARENTHESIS |
-                                CHAR_TOKEN |
-                                number |
-                                list |
-                                binaryString |
-                                listString |
-                                sigil |
-                                FALSE |
-                                NIL |
-                                TRUE |
-                                atom |
-                                ALIAS |
-                                IDENTIFER
-                               ) EOL* DOT_OPERATOR EOL* &(noParenthesesQualifierTail | IDENTIFIER)
-							</code></pre>
-						</figure>
-						<aside class="notes">
-							<p>
-								Comments are a message to myself to prevent me from thinking I can simplify the grammar
-								by combining rules, because it's not possible to hold the whole grammar and its
-								recursive implications in your head, but like all comments their truthfulness is
-								immediate and fleeting.  For example, the first comments, I can actually explain
-								better now, but that only came after debugging more difficult problems with do block
-								parsing.
-							</p>
-							<p>
-								All this looks like a bunch of copying all the prefix operators and all the tokens
-								I could think of as valid qualifiers for calls, but this approach is wrong.  I was
-								missing that the recursive nature of matched expression (<code>matchedExpression</code>)
-								would automatically produce qualified no parentheses function calls if I allowed
-								no parentheses function calls into matched expressions in general.
-							</p>
-							<p>
-								This wouldn't be the only time where implementing the grammar piece-meal would actually
-								make it harder to get correct behavior.
 							</p>
 						</aside>
 					</section>
