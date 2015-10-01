@@ -2662,7 +2662,7 @@ Elixir File(0,13)
 									<code>src/org/elixir_lang/IntellijElixir.java</code>
 								</a>
 							</figcaption>
-							<pre><code class="java stretch" data-trim style="font-size: 170%; line-height: 100%">
+							<pre><code class="java stretch" data-trim style="font-size: 200%; line-height: 100%">
 package org.elixir_lang;
 
 import com.ericsson.otp.erlang.OtpNode;
@@ -2675,7 +2675,10 @@ public class IntellijElixir {
 
     public static OtpNode getLocalNode() throws IOException {
         if (localNode == null) {
-            localNode = new OtpNode("intellij-elixir@127.0.0.1", "intellij_elixir");
+            localNode = new OtpNode(
+                "intellij-elixir@127.0.0.1",
+                "intellij_elixir"
+            );
         }
 
         return localNode;
@@ -2713,11 +2716,13 @@ public class IntellijElixir {
 									<code>src/org/elixir_lang/intellij_elixir/Quoter.java</code>
 								</a>
 							</figcaption>
-							<pre><code class="java stretch" data-trim style="font-size: 120%; line-height: 100%">
+							<pre><code class="java stretch" data-trim style="font-size: 155%; line-height: 100%">
 package org.elixir_lang.intellij_elixir;
 
 public class Quoter {
-    public static OtpErlangTuple quote(@NotNull String code) throws IOException, OtpErlangExit, OtpErlangDecodeException {
+    public static OtpErlangTuple quote(@NotNull String code) throws IOException,
+                                                                    OtpErlangExit,
+                                                                    OtpErlangDecodeException {
         final OtpNode otpNode = IntellijElixir.getLocalNode();
         final OtpMbox otpMbox = otpNode.createMbox();
 
@@ -2893,7 +2898,7 @@ matched_op_expr -> arrow_op_eol matched_expr : {'$1', '$2'}.
 									<code>src/org/elixir_lang/Elixir.bnf</code>
 								</a>
 							</figcaption>
-							<pre><code class="stretch" data-trim>
+							<pre><code class="stretch" data-trim style="font-size: 120%; line-height: 100%">
 matchedMatchOperation ::= matchedExpression matchInfixOperator matchedExpression
                           { implements = "org.elixir_lang.psi.InfixOperation" methods = [quote] rightAssociative = true }
 
@@ -2907,7 +2912,7 @@ matchedOrOperation ::= matchedExpression orInfixOperator matchedExpression
 									<code>src/org/elixir_lang/psi/impl/ElixirPsiImplUtil.java#</code>
 								</a>
 							</figcaption>
-							<pre><code class="java stretch" data-trim>
+							<pre><code class="java stretch" data-trim style="font-size: 120%; line-height: 100%">
 public class ElixirPsiImplUtil {
     @Contract(pure = true)
     @NotNull
@@ -2915,7 +2920,9 @@ public class ElixirPsiImplUtil {
         PsiElement[] children = infixOperation.getChildren();
 
         if (children.length != 3) {
-            throw new NotImplementedException("BinaryOperation expected to have 3 children (left operand, operator, right operand");
+            throw new NotImplementedException(
+                "BinaryOperation expected to have 3 children (left operand, operator, right operand"
+            );
         }
 
         Quotable leftOperand = (Quotable) children[0];
