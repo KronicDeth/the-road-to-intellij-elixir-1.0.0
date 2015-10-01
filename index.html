@@ -1309,7 +1309,7 @@ tokenize([$~,S,H|T] = Original, Line, Scope, Tokens) when ?is_sigil(H), ?is_upca
                                     <ul>
                                         <li>CharListSigil</li>
                                         <li>Regex</li>
-                                        <li>Sigil</li>
+                                        <li>Sigil (Generic)</li>
                                         <li>StringSigil</li>
                                         <li>Words</li>
                                     </ul>
@@ -1345,12 +1345,8 @@ tokenize([$~,S,H|T] = Original, Line, Scope, Tokens) when ?is_sigil(H), ?is_upca
                             <p>
                                 These considerations mean I needed the tokenizer to produce different tokens for each
                                 combination of sigil name and interpolated vs literal.  There is a 3rd dimension of
-                                whether the sigil is a line or herdoc, which is important since leading spaces
+                                whether the sigil is a line or heredoc, which is important since leading spaces
                                 are significant and can't be treated as simple, ignored, whitespace in heredocs.
-                            </p>
-                            <p>
-                                The Sigil name is used for any generic sigil that may be in a user library that uses a
-                                character for a name not used by the Kernel.
                             </p>
                         </aside>
                     </section>
@@ -1453,8 +1449,8 @@ SIGIL_PROMOTER = {SIGIL_BRACES_PROMOTER} |
                             </p>
                             <p>
                                 If anyone has better terminology for this let me know.  I picked promoter because
-                                terminator was used in the native implementation and the oppose of a terminator in a DNA
-                                sequence is a promoter.
+                                terminator was used in the native implementation and the opposite of a terminator in a
+								DNA sequence is a promoter.
                             </p>
                         </aside>
                     </section>
@@ -1504,22 +1500,20 @@ SIGIL_PROMOTER = {SIGIL_BRACES_PROMOTER} |
                                 The regular expression to end a group or heredoc unfortunately has to contain all
                                 <em>potential</em> terminators, not just the correct one that matches the active
                                 promoter because the regular expression can't be dynamic based on the stack since
-                                I added the stack to JFlex.
+                                that would involve changing JFlex's code generator.
                             </p>
                             <p>
-                                So, when a potential terminator is matched, is terminator (<code>isTerminator</code>)
-                                checks that the text matches the promoter on the stack.  If it does match, then
-                                the group or heredoc ends, but if it doesn't match then the potential terminator is
-                                just treated as non-special text for the sigil, string, or char list.
+                                <code>isTerminator</code> checks that the text matches the promoter on the stack.  If it
+								does match, then the group or heredoc ends, but if it doesn't match then the potential
+								terminator is just treated as non-special text.
                             </p>
                             <p>
                                 When the terminator matches the promoter, there also needs to be check if this is a
                                 sigil because unlike Char Lists or Strings, sigils can have characters after the
-                                terminator to modify the sigil behavior
+                                terminator to modify the sigil behavior.
                             </p>
                         </aside>
                     </section>
-
                     <section id="sigil-modifiers">
                         <h1>Modifiers</h1>
                         <figure>
@@ -1548,11 +1542,10 @@ SIGIL_MODIFIER = [a-z]
                         <aside class="notes">
                             <p>
                                 The sigil modifiers (<code>SIGIL_MODIFIERS</code>) state uses an idiom that would
-                                become common in elixir dot flex (<code>Elixir.flex</code>): the last rule in a
-                                state matches either E-O-L or any character so that it can be handled in another
-                                state.  Using this idiom, I was able to avoid duplicating rules in descendant state
-                                and instead just poping the stack and going back to <code>BODY</code> or
-                                <code>INTERPOLATION</code>.
+                                become common: the last rule in a state matches either E-O-L or any character so that it
+								can be handled in another state.  Using this idiom, I was able to avoid duplicating
+								rules in descendant state and instead just pop the stack and go back to the previous
+								state.
                             </p>
                         </aside>
                     </section>
@@ -1620,8 +1613,8 @@ private literalWordsBody ::= WORDS_FRAGMENT*
                                 rule for each of the 20 combinations.
                             </p>
                             <p>
-                                Keep all the rule pattern for heredocs and lines in sync would prove difficult and lead
-                                to a few missed-update bugs.
+                                Keeping all the rule pattern for heredocs and lines in sync would prove difficult and
+								lead to a few missed-update bugs.
                             </p>
                         </aside>
                     </section>
