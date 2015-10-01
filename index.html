@@ -2282,13 +2282,13 @@ noParenthesesExpression ::= emptyParentheses |
 								Having to put not keyword pair colon (<code>!KEYWORD_PAIR_COLON</code>) after
 								matchedExpression is one of the places where one has to think recursively through the
 								rules: matched expression (<code>matchedExpression</code>) contains access expession
-								(<code>accessExpression</code>). [Hit Enter]  Access expression contains string line
-								(<code>stringLine</code>) [Hit Enter], but a string (or char list) is contained in
-								quoted [Hit Enter], which is contained in keyword key (<code>keywordKey</code>)
-								[Hit Enter], which is contained in no parentheses keyword pair
-								(<code>noParenthesesKeywordPair</code> [Hit Enter], which is contained in no parentheses
-								keywords (<code>noParenthesesKeywords</code>) [Hit Enter], which is the tail of
-								no parentheses function calls. [Hit Enter]
+								(<code>accessExpression</code>). [hit space]  Access expression contains string line
+								(<code>stringLine</code>) [hit space], but a string (or char list) is contained in
+								quoted [hit space], which is contained in keyword key (<code>keywordKey</code>)
+								[hit space], which is contained in no parentheses keyword pair
+								(<code>noParenthesesKeywordPair</code> [hit space], which is contained in no parentheses
+								keywords (<code>noParenthesesKeywords</code>) [hit space], which is the tail of
+								no parentheses function calls. [hit space]
 							</p>
 							<p>
 								The native parser does not have this problem because it tokenizes quoted keyword key
@@ -2473,15 +2473,15 @@ matchedDotOperation ::= alias dotInfixOperator noParenthesesNoArgumentsUnqualifi
 								as a substitution for the base rule, <code>matchedExpression</code>.
 							</p>
 							<p>
-								Starting with a subset of the rules including dot and alias, [Hit Enter]
+								Starting with a subset of the rules including dot and alias, [hit space]
 								the alias is substituted into the lower precedence dot operation because lower
 								precedence operations wrap higher precedence operators, think additions taking
 								multiplications as arguments.
 							</p>
 							<p>
-								[Hit Enter] On the right-hand operand, <code>matchedCallOperation</code>, is
-								substituted, which [Hit Enter] can be expanded to another <code>matchedExpression</code>,
-								[Hit Enter] which will be an identifer, which [Hit Enter] matches a remote no
+								[hit space] On the right-hand operand, <code>matchedCallOperation</code>, is
+								substituted, which [hit space] can be expanded to another <code>matchedExpression</code>,
+								[hit space] which will be an identifer, which [hit space] matches a remote no
 								parentheses call.
 							</p>
 						</aside>
@@ -2634,7 +2634,7 @@ Elixir File(0,13)
 								(<code>iex</code>).
 							</p>
 							<p>
-								It's not easy to compare quoted form to the PSI tree as shown. [hit twice enter]  So,
+								It's not easy to compare quoted form to the PSI tree as shown. [hit space]  So,
 								I normally would have to indent the quoted form to match the PSI tree.
 							</p>
 							<p>
