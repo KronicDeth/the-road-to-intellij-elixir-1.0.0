@@ -1119,7 +1119,7 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
 								<a href="#/matched-expressions-grammars">Grammars</a>
 							</li>
 							<li>
-								<a href="#/matched-expressions-parsing-direction">Parsing Direction</a>
+								<a href="#/matched-expressions-associativity">Associativity</a>
 							</li>
 							<li>
 								<p>Pratt Parsing</p>
@@ -1131,9 +1131,6 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
 										<a href="#/matched-expressions-pratt-parsing-tail">Tail</a>
 									</li>
 								</ul>
-							</li>
-							<li>
-								<a href="#/matched-expressions-associativity">Associativity</a>
 							</li>
                         </ul>
                     </section>
@@ -1513,6 +1510,118 @@ matchedExpressionWhenOperation ::= matchedExpression EOL* WHEN_OPERATOR EOL* mat
 							</p>
 						</aside>
 					</section>
+					<section id="matched-expressions-associativity">
+						<h1>Associativity</h1>
+						<table>
+							<thead>
+							<tr>
+								<th>Associativity</th>
+								<th>Left</th>
+								<th>Right</th>
+							</tr>
+							<tr>
+								<th>Code</th>
+								<td>
+									<code>a or b || c</code>
+								</td>
+								<td>
+									<code>a ++ b <> c</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Nesting</th>
+								<td>
+									<ul>
+										<li>
+											<code>||</code>
+											<ul>
+												<li>
+													<code>or</code>
+													<ul>
+														<li>
+															<code>a</code>
+														</li>
+														<li>
+															<code>b</code>
+														</li>
+													</ul>
+												</li>
+												<li>
+													<code>c</code>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</td>
+								<td>
+									<ul>
+										<li>
+											<code>++</code>
+											<ul>
+												<li>
+													<code>a</code>
+												</li>
+												<li>
+													<code>&lt;&gt;</code>
+													<ul>
+														<li>
+															<code>b</code>
+														</li>
+														<li>
+															<code>c</code>
+														</li>
+													</ul>
+												</li>
+											</ul>
+										</li>
+									</ul>
+								</td>
+							</tr>
+							<tr>
+								<th>Effective Parentheses</th>
+								<td>
+									<code>(a or b) || c</code>
+								</td>
+								<td>
+									<code>a ++ (b <> c)</code>
+								</td>
+							</tr>
+							<tr>
+								<th>Execution Pipeline</th>
+								<td>
+									a |> Kernel.or(b) |> Kernel.||(c)
+								</td>
+								<td>
+									a |> Kernel.++(b |> Kernel.<>(c))
+								</td>
+							</tr>
+							</thead>
+						</table>
+						<aside class="notes">
+							<p>
+								Instead of having to visual that in your head, let's see a nested example for
+								left- and right-associative operators.
+							</p>
+							<p>
+								I'm using the or operators, the word <code>or</code> and double pipes (<code>||</code>)
+								for the left-associative operator because they're easy to distingish.  Similarly,
+								I'm using the two operators, double plus (<code>++</code>) and diamond
+								(<code>&lt;&gt;</code>), for the right-associative operator.  Remember, the two
+								operators in each example are of the same precedence, so it's just the associativity
+								controlling the nesting.
+							</p>
+							<p>
+								For left-associative, the left-most operator becomes the root of the tree with
+								the right operand executing first, so it looks like the operators are in the wrong
+								order, but if you rearrange the nesting to pipeline order it makes sense.
+							</p>
+							<p>
+								For right-associative, reading the tree in order, it looks like it matches, the order
+								of the code, but when you change it to pipeline order you can see the the second
+								operation must actually complete at the same time as the first argument.
+							</p>
+						</aside>
+					</section>
 					<section id="matched-expressions-pratt-parsing-head">
 						<h1>Pratt Parsing</h1>
 						<h2>Head</h2>
@@ -1691,118 +1800,7 @@ public class ElixirParser implements PsiParser {
 							</p>
 						</aside>
 					</section>
-					<section id="matched-expressions-associativity">
-						<h1>Associativity</h1>
-						<table>
-							<thead>
-							<tr>
-								<th>Associativity</th>
-								<th>Left</th>
-								<th>Right</th>
-							</tr>
-							<tr>
-								<th>Code</th>
-								<td>
-									<code>a or b || c</code>
-								</td>
-								<td>
-									<code>a ++ b <> c</code>
-								</td>
-							</tr>
-							<tr>
-								<th>Nesting</th>
-								<td>
-									<ul>
-										<li>
-											<code>||</code>
-											<ul>
-												<li>
-													<code>or</code>
-													<ul>
-														<li>
-															<code>a</code>
-														</li>
-														<li>
-															<code>b</code>
-														</li>
-													</ul>
-												</li>
-												<li>
-													<code>c</code>
-												</li>
-											</ul>
-										</li>
-									</ul>
-								</td>
-								<td>
-									<ul>
-										<li>
-											<code>++</code>
-											<ul>
-												<li>
-													<code>a</code>
-												</li>
-												<li>
-													<code>&lt;&gt;</code>
-													<ul>
-														<li>
-															<code>b</code>
-														</li>
-														<li>
-															<code>c</code>
-														</li>
-													</ul>
-												</li>
-											</ul>
-										</li>
-									</ul>
-								</td>
-							</tr>
-							<tr>
-								<th>Effective Parentheses</th>
-								<td>
-									<code>(a or b) || c</code>
-								</td>
-								<td>
-									<code>a ++ (b <> c)</code>
-								</td>
-							</tr>
-							<tr>
-								<th>Execution Pipeline</th>
-								<td>
-									a |> Kernel.or(b) |> Kernel.||(c)
-								</td>
-								<td>
-									a |> Kernel.++(b |> Kernel.<>(c))
-								</td>
-							</tr>
-							</thead>
-						</table>
-						<aside class="notes">
-							<p>
-								Instead of having to visual that in your head, let's see a nested example for
-								left- and right-associative operators.
-							</p>
-							<p>
-								I'm using the or operators, the word <code>or</code> and double pipes (<code>||</code>)
-								for the left-associative operator because they're easy to distingish.  Similarly,
-								I'm using the two operators, double plus (<code>++</code>) and diamond
-								(<code>&lt;&gt;</code>), for the right-associative operator.  Remember, the two
-								operators in each example are of the same precedence, so it's just the associativity
-								controlling the nesting.
-							</p>
-							<p>
-								For left-associative, the left-most operator becomes the root of the tree with
-								the right operand executing first, so it looks like the operators are in the wrong
-								order, but if you rearrange the nesting to pipeline order it makes sense.
-							</p>
-							<p>
-								For right-associative, reading the tree in order, it looks like it matches, the order
-								of the code, but when you change it to pipeline order you can see the the second
-								operation must actually complete at the same time as the first argument.
-							</p>
-						</aside>
-					</section>
+
 				</section>
 				<section class="stack">
 					<section id="no-parentheses-function-calls">
