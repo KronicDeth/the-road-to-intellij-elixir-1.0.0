@@ -1485,8 +1485,13 @@ matchedExpressionWhenOperation ::= matchedExpression EOL* WHEN_OPERATOR EOL* mat
 								Grammar Kit is a Parsing Expression Grammar parser generator.
 							</p>
 							<p>
-								LALR parsers were invented back in 1969, but Parsing Expression Grammar weren't invented
-								until 2004, so they may have come out after some of us were in college.
+								Rightmost derivation means the parse tree is actually built up from the right-most end
+								of the text, so opposite the way the text is read, which is somewhat counter-intuitive
+								for human, but turns out to be really powerful.
+							</p>
+							<p>
+								Leftmost derivation means the parse tree is built in the same order as the text is
+								read and is easier for humans to understand, but it's not a theoretically powerful.
 							</p>
 							<p>
 								LALR grammars don't have syntax for zero-or-more, one-or-more, or optional, instead they
@@ -1500,66 +1505,11 @@ matchedExpressionWhenOperation ::= matchedExpression EOL* WHEN_OPERATOR EOL* mat
 								after exclamation point (<code>!</code>) to do negative look-ahead.
 							</p>
 							<p>
-								This look-ahead being rule based instead of token based means it is potentially
+								This look-ahead being rule-based instead of token-based means it is potentially
 								infinite, but that also means that performance in both memory and speed can be worse
 								if the look-ahead is chosen poorly.  For LALR, the look-ahead is automatically one
 								token and the best rule can be chosen as the match, but the rule order and look-ahead
 								is under control of the grammar for Parsing Expression Grammars.
-							</p>
-						</aside>
-					</section>
-					<section id="matched-expressions-parsing-direction">
-						<h1>Parsing Direction</h1>
-						<table>
-							<thead>
-							<tr>
-								<th></th>
-								<th>
-									Top-Down / Leftmost Derivation
-								</th>
-								<th>
-									Bottom-Up / Rightmost Derivation
-								</th>
-							</tr>
-							</thead>
-							<tbody>
-							<tr>
-								<th>First Symbol</th>
-								<td>Root</td>
-								<td>Tokens</td>
-							</tr>
-							<tr>
-								<th>Building</th>
-								<th>Choses children for current rule</th>
-								<td>Combines tokens/rules</td>
-							</tr>
-							<tr>
-								<th>Last Symbol</th>
-								<th>Tokens</th>
-								<th>Root</th>
-							</tr>
-							<tr>
-								<th>Strength</th>
-								<td>Easier to write</td>
-								<td>Faster to run</td>
-							</tr>
-							</tbody>
-						</table>
-						<aside class="notes">
-							<p>
-								Top-down parsing can be thought of using functions to try to match the beginning of the
-								input.  Inside each function, the child rules are called to see if they match.  If
-								all the child rules matches recursively, then top-down finds a match.
-							</p>
-							<p>
-								Bottom-up parsing starts with the leaf tokens and tries to reduce the right-most branches
-								into parent, and then ancestor nodes until getting to a root node that matches the
-								top-down parsing's entry point.
-							</p>
-							<p>
-								Bottom-up parser have the benefit of usually having linear bound on their parsing time
-								relative to the input size while top-down parsing can involve a lot of backtrack, but
-								the generated code is more human readable and debuggable.
 							</p>
 						</aside>
 					</section>
@@ -1616,10 +1566,10 @@ public class ElixirParser implements PsiParser {
 						</figure>
 						<aside class="notes">
 							<p>
-								The generated code I showed and the rules for parsing expression grammars say that left
-								recursion is impossible, so how am I allowed to have matched expression
-								(<code>matchedExpression</code>) as the left-most rule in a rule that's part of matched
-								expression (<code>matchedExpression</code>) itself?
+								The rules for parsing expression grammars say that left recursion is impossible, so how
+								am I allowed to have matched expression (<code>matchedExpression</code>) as the
+								left-most rule in a rule that's part of matched expression
+								(<code>matchedExpression</code>) itself?
 							</p>
 							<p>
 								Pratt parsing is an extension to recursive-descent parsers, which include parsing
@@ -1634,23 +1584,22 @@ public class ElixirParser implements PsiParser {
 								of the precedence of the operator.
 							</p>
 							<p>
-								Here, you can see that the prefix operations, matched expression unary operation
-								(<code>matchedExpressionUnaryOperation</code>) and matched expression at operation
-								(<code>matchedexpressionAtOperation</code>), can be checked for because they consume
+								Here, you can see that the prefix operations,
+								<code>matchedExpressionUnaryOperation</code> and
+								<code>matchedexpressionAtOperation</code>, can be checked for because they consume
 								an operator token first and so aren't left-recursive.
 							</p>
 							<p>
-								Likewise, identifier expression (<code>identifierExpression</code>) and access
-								expression (<code>accessExpression</code>) are atoms, so they don't include
-								matched expression (<code>matchedExpression</code>) at all and so can be used to
-								consume input immediately.
+								Likewise, <code>identifierExpression</code> and access expression
+								<code>accessExpression</code> are atoms, so they don't include
+								<code>matchedExpression</code> at all and so can be used to consume input immediately.
 							</p>
 							<p>
-								Once some input is consumed, matched expression (<code>matchedExpression</code>)
-								goes into matched expression underscore 0 (<code>matchedExpression_0</code>).  For
-								user written rules the underscore number system is unused for anonymous groups in
-								parentheses, but here's it's meant to indicate that the parser is checking the tail
-								of all the matched expression (<code>matchedExpression</code>) rules.
+								Once some input is consumed, <code>matchedExpression</code> goes into matched expression
+								underscore 0 (<code>matchedExpression_0</code>).  For user written rules the underscore
+								number system is used for anonymous groups in parentheses, but here's it's meant to
+								indicate that the parser is checking the tail of all the <code>matchedExpression</code>
+								rules.
 							</p>
 						</aside>
 					</section>
