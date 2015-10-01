@@ -2353,11 +2353,9 @@ no_parens_op_expr -> arrow_op_eol no_parens_expr : {'$1', '$2'}.
 									<code>src/org/elixir_lang/Elixir.bnf</code>
 								</a>
 							</figcaption>
-							<pre><code class="stretch" data-trim style="font-size: 125%; line-height: 100%">
+							<pre><code class="stretch" data-trim style="font-size: 195%; line-height: 100%">
 matchedExpression ::= matchedCaptureNonNumericOperation |
                       matchedInMatchOperation |
-                      /* noParenthesesKeywords needs to be first as matchedExpression will match due to the error
-                         handling built into the Pratt parser. */
                       matchedWhenNoParenthesesKeywordsOperation |
                       matchedWhenOperation |
                       matchedTypeOperation |
@@ -2381,14 +2379,6 @@ matchedExpression ::= matchedCaptureNonNumericOperation |
                       accessExpression
 
 matchedCallOperation ::= matchedExpression noParenthesesManyArgumentsStrict
-                         {
-                           implements = "org.elixir_lang.psi.Call"
-                           methods = [
-                             getArguments
-                             getIdentifier
-                             quote
-                           ]
-                         }
 							</code></pre>
 						</figure>
 						<aside class="notes">
