@@ -875,7 +875,7 @@ strip_horizontal_space(T) ->
                     </section>
 					<section id="interpolation-interpolation">
 						<h1>Interpolation</h1>
-						<pre><code class="elixir" data-trim>
+						<pre><code class="elixir strech" data-trim style="font-size: 195%; line-height: 100%">
 iex> greeting = "Hello #{"W#{"or"}ld"}"
 "Hello World"
 iex> tuple = "A tuple #{inspect {"Containing an #{:interpolated} string"}}"
@@ -975,7 +975,7 @@ iex> tuple = "A tuple #{inspect {"Containing an #{:interpolated} string"}}"
 							</p>
 						</aside>
 					</section>
-					<section id="interpolation-elixir-native" style="font-size: 85%">
+					<section id="interpolation-elixir-native">
 						<h1>Elixir Native Interpolation</h1>
 						<figure>
 							<figcaption>
@@ -983,7 +983,7 @@ iex> tuple = "A tuple #{inspect {"Containing an #{:interpolated} string"}}"
 									<code>lib/elixir/src/elixir_tokenizer.erl</code>
 								</a>
 							</figcaption>
-							<pre><code class="erlang" data-trim>
+							<pre><code class="erlang stretch" data-trim style="font-size: 140%; line-height: 100%">
 tokenize([$"|T], Line, Scope, Tokens) ->
   handle_strings(T, Line, $", Scope, Tokens);
 tokenize([$'|T], Line, Scope, Tokens) ->
@@ -1012,7 +1012,7 @@ handle_strings(T, Line, H, Scope, Tokens) ->
 									<code>lib/elixir/src/elixir_interpolation.erl</code>
 								</a>
 							</figcaption>
-							<pre><code class="erlang" data-trim>
+							<pre><code class="erlang stretch" data-trim style="font-size: 140%; line-height: 100%">
 extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
   Output1 = build_string(Line, Buffer, Output),
 
