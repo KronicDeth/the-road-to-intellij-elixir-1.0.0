@@ -1241,9 +1241,6 @@ extract(Line, Scope, true, [$#, ${|Rest], Buffer, Output, Last) ->
 								<a href="#/matched-expressions-parsing-direction">Parsing Direction</a>
 							</li>
 							<li>
-								<a href="#/matched-expressions-yecc-vs-grammar-kit-generated-code">YECC vs Grammar Kit Generated Code</a>
-							</li>
-							<li>
 								<p>Pratt Parsing</p>
 								<ul>
 									<li>
@@ -1685,99 +1682,6 @@ matchedExpressionWhenOperation ::= matchedExpression EOL* WHEN_OPERATOR EOL* mat
 								Bottom-up parser have the benefit of usually having linear bound on their parsing time
 								relative to the input size while top-down parsing can involve a lot of backtrack, but
 								the generated code is more human readable and debuggable.
-							</p>
-						</aside>
-					</section>
-					<section id="matched-expressions-yecc-vs-grammar-kit-generated-code">
-						<h1>YECC vs Grammar Kit Generated Code</h1>
-						<table class="stretch">
-							<thead>
-							<tr>
-								<th>YECC</th>
-								<th>Grammar Kit</th>
-							</tr>
-							</thead>
-							<tbody>
-							<tr>
-								<td>
-									<figure>
-										<figcaption>
-											<code>lib/elixir/src/elixir_parser.erl</code>
-										</figcaption>
-										<pre><code class="erlang stretch" data-trim>
-yeccpars2_6(S, '(', Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 40, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, ')', Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 288, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, ';', Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 289, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, '[', Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 43, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, kw_identifier, Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 87, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, kw_identifier_safe, Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 88, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, kw_identifier_unsafe, Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 89, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, number, Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 60, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, stab_op, Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 290, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, '{', Ss, Stack, T, Ts, Tzr) ->
- yeccpars1(S, 66, Ss, Stack, T, Ts, Tzr);
-yeccpars2_6(S, Cat, Ss, Stack, T, Ts, Tzr) ->
- yeccpars2_cont_2(S, Cat, Ss, Stack, T, Ts, Tzr).
-										</code></pre>
-									</figure>
-								</td>
-								<td>
-									<figure>
-										<figcaption>
-											<a href="https://github.com/KronicDeth/intellij-elixir/blob/v0.2.0/gen/org/elixir_lang/parser/ElixirParser.java#L214-L235">
-												<code>gen/org/elixir_lang/parser/ElixirParser.java</code>
-											</a>
-										</figcaption>
-										<pre><code class="java stretch" data-trim style="font-size: 140%; line-height: 100%">
-public class ElixirParser implements PsiParser {
-  // COLON (ATOM_FRAGMENT | quote)
-  public static boolean atom(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "atom")) return false;
-    if (!nextTokenIs(b, COLON)) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, COLON);
-    r = r && atom_1(b, l + 1);
-    exit_section_(b, m, ATOM, r);
-    return r;
-  }
-
-  // ATOM_FRAGMENT | quote
-  private static boolean atom_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "atom_1")) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = consumeToken(b, ATOM_FRAGMENT);
-    if (!r) r = quote(b, l + 1);
-    exit_section_(b, m, null, r);
-    return r;
-  }
-}
-										</code></pre>
-									</figure>
-								</td>
-							</tr>
-							</tbody>
-						</table>
-						<aside class="notes">
-							<p>
-								YECC's generated code is very well optimized, handling individual characters or
-								atoms as tokens, while Grammar Kit's code is less optimized and more like if you
-								as a developer wrote the match functions.  Grammar Kit's methods match the rule
-								names while the yecc parse functions use number offsets.
-							</p>
-							<p>
-								This made debugging the generate parsers very easy, except that just like YECC's code,
-								you can't ask for the in progress AST.
 							</p>
 						</aside>
 					</section>
